@@ -1,0 +1,22 @@
+{
+  "name": "paper-read-room",
+  "version": "1.0.0",
+  "description": "A local paper reading room for managing HTML paper deep-dive reports.",
+  "main": "server/app.py",
+  "scripts": {
+    "start": "python3 server/app.py",
+    "dev": "python3 server/app.py",
+    "check": "python3 -m py_compile server/app.py"
+  },
+  "keywords": [
+    "papers",
+    "research",
+    "codex",
+    "reading-room"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "python": ">=3.10"
+  }
+}
