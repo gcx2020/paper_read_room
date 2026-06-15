@@ -104,10 +104,18 @@ def unique_slug(title: str) -> str:
     base = slugify(title)
     candidate = base
     index = 2
-    while candidate in existing:
+    while candidate in existing or (PAPERS_DIR / f"{candidate}.html").exists():
         candidate = f"{base}-{index}"
         index += 1
     return candidate
+
+
+def paper_html_path(slug: str) -> Path:
+    return PAPERS_DIR / f"{slug}.html"
+
+
+def paper_html_relpath(slug: str) -> str:
+    return f"papers/{slug}.html"
 
 
 def normalize_paper(payload: dict, existing: dict | None = None) -> dict:
@@ -276,7 +284,7 @@ def update_job(job_id: str, patch: dict) -> dict | None:
 def build_research_prompt(payload: dict, slug: str) -> str:
     agents_path = ROOT_DIR / "AGENTS.md"
     agents = agents_path.read_text(encoding="utf-8") if agents_path.exists() else ""
-    paper_dir = PAPERS_DIR / slug
+    html_path = paper_html_path(slug)
     return "\n".join(
         [
             "You are working in this repository as a paper research assistant.",
@@ -296,19 +304,19 @@ def build_research_prompt(payload: dict, slug: str) -> str:
             f"- User notes: {payload.get('notes') or 'None'}",
             "",
             "Output requirements for this project:",
-            f"1. Create the final offline HTML deep-dive at: {paper_dir / 'index.html'}",
-            f"2. Put cropped figures/tables/assets under: {paper_dir / 'assets'}",
-            "3. Keep all generated paper artifacts under the papers/ directory.",
-            "4. Do not invent missing public resources or acceptance information.",
-            "5. If the PDF cannot be read or figures cannot be extracted, write a clear failure note instead of a fake final report.",
+            f"1. Create exactly one final offline HTML report at: {html_path}",
+            "2. Do not create a per-paper directory under papers/.",
+            "3. Do not save the original PDF, cropped PNG/JPG images, assets folders, logs, or other intermediate files.",
+            "4. If figures or tables are needed, embed them directly in the HTML only when this complies with AGENTS.md; otherwise explain the limitation inside the HTML or failure note.",
+            "5. Keep the project clean: the final successful artifact should be papers/<paper-name>.html.",
+            "6. Do not invent missing public resources or acceptance information.",
+            "7. If the PDF cannot be read or required checks fail, create a concise failure note at the same target path as readable HTML instead of creating extra files.",
         ]
     )
 
 
 def start_codex_research(payload: dict) -> dict:
     slug = unique_slug(payload.get("title") or payload.get("indexId") or "paper")
-    paper_dir = PAPERS_DIR / slug
-    (paper_dir / "assets").mkdir(parents=True, exist_ok=True)
     job = {
         "id": f"job_{int(time.time() * 1000)}",
         "type": "codex-research",
@@ -317,7 +325,7 @@ def start_codex_research(payload: dict) -> dict:
         "indexId": payload.get("indexId", ""),
         "pdfUrl": payload.get("pdfUrl", ""),
         "slug": slug,
-        "outputPath": f"papers/{slug}/index.html",
+        "outputPath": paper_html_relpath(slug),
         "createdAt": now_iso(),
         "updatedAt": now_iso(),
         "log": "",
@@ -348,7 +356,7 @@ def run_codex_job(job_id: str, payload: dict, slug: str) -> None:
             log_parts.append(line)
             update_job(job_id, {"log": "".join(log_parts)[-12000:]})
         code = process.wait()
-        html_path = PAPERS_DIR / slug / "index.html"
+        html_path = paper_html_path(slug)
         if code == 0 and html_path.exists():
             upsert_paper(
                 {
@@ -357,7 +365,7 @@ def run_codex_job(job_id: str, payload: dict, slug: str) -> None:
                     "slug": slug,
                     "source": "codex",
                     "status": "ready",
-                    "htmlPath": f"papers/{slug}/index.html",
+                    "htmlPath": paper_html_relpath(slug),
                 }
             )
             update_job(job_id, {"status": "completed", "finishedAt": now_iso(), "exitCode": code})
@@ -368,7 +376,7 @@ def run_codex_job(job_id: str, payload: dict, slug: str) -> None:
                     "status": "failed",
                     "finishedAt": now_iso(),
                     "exitCode": code,
-                    "error": "Codex finished without creating papers/<slug>/index.html.",
+                    "error": "Codex finished without creating papers/<slug>.html.",
                 },
             )
     except Exception as error:
@@ -545,9 +553,7 @@ class PaperReadRoomHandler(BaseHTTPRequestHandler):
             self.send_json(400, {"error": "title and html file are required"})
             return
         slug = slugify(form.get("slug")) if form.get("slug") else unique_slug(title)
-        paper_dir = PAPERS_DIR / slug
-        (paper_dir / "assets").mkdir(parents=True, exist_ok=True)
-        (paper_dir / "index.html").write_bytes(file_item["content"])
+        paper_html_path(slug).write_bytes(file_item["content"])
         paper = upsert_paper(
             {
                 **form,
@@ -556,7 +562,7 @@ class PaperReadRoomHandler(BaseHTTPRequestHandler):
                 "title": title,
                 "source": "upload",
                 "status": "ready",
-                "htmlPath": f"papers/{slug}/index.html",
+                "htmlPath": paper_html_relpath(slug),
                 "originalFileName": file_item.get("filename", ""),
             }
         )

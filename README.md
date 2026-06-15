@@ -7,7 +7,7 @@
 - 论文库管理：展示标题、索引号、论文类型、分类、关键词、阅读状态、更新时间和备注。
 - 阅读管理：支持未读、阅读中、已读、归档状态，支持阅读备注、标签、优先级和批注。
 - 分类检索：按标题、索引号、备注、论文类型、分类和关键词检索。
-- HTML 解读上传：上传完整的离线 `.html` 论文解读文件，自动保存到 `papers/<slug>/index.html`。
+- HTML 解读上传：上传完整的离线 `.html` 论文解读文件，自动保存到 `papers/<paper-name>.html`。
 - 新增论文研究任务：填写论文名称、索引号或 PDF/Web 链接，后端调用 Codex 读取 `AGENTS.md` 并生成完整论文精读页面。
 - 前端预览：在工作台中直接预览 `papers/` 下的 HTML 页面。
 - 任务队列：查看 Codex 研究任务状态、输出路径、错误信息和最近日志。
@@ -24,9 +24,7 @@ paper_read_room/
     papers.json          # 论文元数据
     jobs.json            # 任务队列状态，运行后自动生成
   papers/
-    <paper-slug>/
-      index.html         # 最终离线论文解读页面
-      assets/            # 裁剪图表、局部截图等资源
+    <paper-name>.html    # 最终离线论文解读页面，每篇论文一个 HTML
   public/
     index.html           # 前端工作台
     styles.css           # 页面样式
@@ -76,8 +74,10 @@ codex exec "<研究提示词>"
 Codex 需要在任务中完成 PDF 获取、正文解析、图表抽取、公式检查、资源信息核验，并把最终 HTML 写入：
 
 ```text
-papers/<paper-slug>/index.html
+papers/<paper-name>.html
 ```
+
+项目保持简洁：成功的研究任务只应在 `papers/` 下留下一个 HTML 报告文件，不保存原始 PDF、裁剪 PNG/JPG、assets 目录或中间日志。
 
 如果你的本机 Codex 命令不是 `codex`，可以通过环境变量指定命令前缀：
 
@@ -209,7 +209,7 @@ npm run check
 
 ## 说明
 
-- `papers/` 是论文解读的最终交付目录，建议将每篇论文的图片、表格裁剪和补充资源放在对应 `assets/` 下。
+- `papers/` 是论文解读的最终交付目录，每篇论文对应一个 `.html` 文件。
 - 上传 HTML 时，系统只负责入库和保存，不会改写文件内容。
 - Codex 研究任务是否能成功取决于本机是否可用 `codex` 命令，以及 Codex 是否能访问论文 PDF 或相关网页。
 - `AGENTS.md` 当前包含严格的论文精读生成规范，尤其要求不要在 PDF 正文和图表未成功读取时生成伪完整报告。

@@ -4,5 +4,15 @@ __pycache__/
 *.pyc
 data/*.tmp
 data/jobs.json
-papers/**/source.pdf
+papers/*.pdf
+papers/*.png
+papers/*.jpg
+papers/*.jpeg
+papers/*.webp
+papers/*.log
+papers/**/*.pdf
+papers/**/*.png
+papers/**/*.jpg
+papers/**/*.jpeg
+papers/**/*.webp
 papers/**/*.log
