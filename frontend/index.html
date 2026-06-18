@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Paper Reading Manager</title>
+    <link rel="stylesheet" href="/static/style.css?v=20260619-polish1" />
+  </head>
+  <body>
+    <div class="mobile-scrim" id="mobileScrim"></div>
+    <div class="drop-mask" id="dropMask">释放鼠标导入精读 HTML</div>
+    <div class="app-layout">
+      <aside class="sidebar" id="sidebar">
+        <div class="brand">
+          <div class="brand-mark">P</div>
+          <div>
+            <h1>Paper Manager</h1>
+            <p>论文精读与管理</p>
+          </div>
+        </div>
+        <div class="sidebar-scroll">
+          <section class="nav-section">
+            <h2>状态</h2>
+            <button class="nav-item active" data-filter-status=""><span>全部</span><b id="countAll">0</b></button>
+            <button class="nav-item" data-filter-status="reading"><span>在读</span><b id="countReading">0</b></button>
+            <button class="nav-item" data-filter-status="read"><span>已读</span><b id="countRead">0</b></button>
+            <button class="nav-item" data-filter-status="todo"><span>待读</span><b id="countTodo">0</b></button>
+            <button class="nav-item" data-filter-status="archived"><span>归档</span><b id="countArchived">0</b></button>
+          </section>
+          <section class="nav-section">
+            <div class="section-head"><h2>文件夹</h2><button class="icon-btn" id="newFolderBtn" title="新建文件夹">+</button></div>
+            <button class="nav-item" data-folder-id="0"><span>未分类</span><b id="countUnfiled">0</b></button>
+            <div id="folderList" class="folder-list"></div>
+          </section>
+          <section class="nav-section">
+            <h2>标签</h2>
+            <div id="tagList" class="tag-list"></div>
+          </section>
+        </div>
+        <div class="side-actions">
+          <button class="action" id="uploadBtn">上传精读 HTML</button>
+          <button class="action primary" id="aiBtn">AI 研究论文</button>
+          <button class="action deep" id="batchBtn">批量 AI 研究</button>
+          <button class="action" id="scanBtn">自动归档精读</button>
+          <button class="action" id="syncBtn">同步文件系统</button>
+          <a class="repo-link" id="repoLink" href="#" target="_blank" rel="noreferrer">仓库地址加载中</a>
+        </div>
+        <div class="sidebar-resizer" id="sidebarResizer" title="拖拽调整侧边栏宽度"></div>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <button class="menu-btn" id="menuBtn">☰</button>
+          <div class="searchbox"><span>⌕</span><input id="searchInput" placeholder="搜索标题、作者、摘要、arXiv ID" /></div>
+          <select id="yearFilter"><option value="">全部年份</option></select>
+          <select id="sortSelect">
+            <option value="date_added:desc">最近添加</option>
+            <option value="date_updated:desc">最近更新</option>
+            <option value="title:asc">标题 A-Z</option>
+            <option value="year:desc">年份新→旧</option>
+            <option value="rating:desc">评分高→低</option>
+          </select>
+          <button class="toolbar-btn" id="uploadTopBtn">上传</button>
+          <button class="toolbar-btn" id="addPaperBtn">添加论文</button>
+          <button class="toolbar-btn accent" id="aiTopBtn">AI 研究</button>
+          <button class="toolbar-btn deep" id="batchTopBtn">批量AI研究</button>
+          <button class="research-pill hidden" id="researchBadge">研究中</button>
+        </header>
+
+        <section class="content-area">
+          <div id="listView">
+            <div class="stats-row">
+              <button class="stat-card" data-filter-status=""><span>全部</span><b id="statAll">0</b></button>
+              <button class="stat-card violet" data-filter-status="reading"><span>在读</span><b id="statReading">0</b></button>
+              <button class="stat-card green" data-filter-status="read"><span>已读</span><b id="statRead">0</b></button>
+              <button class="stat-card amber" data-filter-status="todo"><span>待读</span><b id="statTodo">0</b></button>
+            </div>
+            <div class="selected-bar hidden" id="selectedBar">
+              <span id="selectedCount">已选 0 篇</span>
+              <button data-batch-status="read">标记已读</button>
+              <button data-batch-status="reading">标记在读</button>
+              <button data-batch-status="todo">标记待读</button>
+              <button data-batch-status="archived">归档</button>
+              <button id="batchTagsBtn">添加标签</button>
+              <button id="moveFolderBtn">移至文件夹</button>
+              <button class="danger" id="batchDeleteBtn">删除</button>
+              <button id="clearSelectedBtn">取消选择</button>
+            </div>
+            <div class="paper-grid" id="paperGrid"></div>
+            <div class="empty-state hidden" id="emptyState">
+              <h2>还没有论文</h2>
+              <p>上传精读 HTML，或手动添加第一篇论文。</p>
+              <button class="toolbar-btn accent" id="emptyAddBtn">添加论文</button>
+            </div>
+            <div class="pagination" id="pagination"></div>
+          </div>
+
+          <div id="detailView" class="detail-view hidden"></div>
+        </section>
+      </main>
+    </div>
+
+    <input type="file" id="fileInput" accept=".html,.htm" multiple hidden />
+    <div id="modalRoot"></div>
+    <div class="toast-stack" id="toastStack"></div>
+    <script src="/static/app.js?v=20260619-polish1"></script>
+  </body>
+</html>
