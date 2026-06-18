@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import os
+import queue
 import shutil
 import subprocess
 import threading
 import time
+from collections import deque
 
 from . import db, research
 from .paths import AGENT_MD_PATH, PAPERS_DIR
@@ -36,12 +38,17 @@ def _single_loop() -> None:
 
 def _batch_loop() -> None:
     while True:
+        item = None
         try:
             item = research.next_queued_item()
             if item:
                 _run_batch_item(item)
-        except Exception:
-            pass
+        except Exception as exc:
+            message = f"批量研究 worker 异常：{exc}"
+            print(message, flush=True)
+            if item:
+                research.update_queue_item(item["id"], status="failed", message="worker 异常", error=message)
+                research.append_queue_log(item["id"], message, "error")
         time.sleep(5)
 
 
@@ -73,15 +80,17 @@ def _run_codex_research(paper_name: str, pdf_url: str | None, log) -> dict:
         "-C",
         str(PAPERS_DIR.parent),
         "--skip-git-repo-check",
+        "-s",
+        "workspace-write",
+        "-a",
+        "never",
         "--color",
         "never",
         _prompt(paper_name, pdf_url),
     ]
     log(f"调用 Codex 生成精读 HTML：agent=codex, model={model}", "generating", "generating")
     log(f"已加载规范文件：{AGENT_MD_PATH.name}", "reading")
-    proc = subprocess.run(cmd, cwd=str(PAPERS_DIR.parent), capture_output=True, text=True, timeout=7200)
-    if proc.returncode != 0:
-        raise RuntimeError((proc.stderr or proc.stdout or "Codex 执行失败")[-4000:])
+    _run_codex_process(cmd, log)
     after = sorted(PAPERS_DIR.glob("*.html"), key=lambda p: p.stat().st_mtime, reverse=True)
     new_files = [p for p in after if p.name not in before or p.stat().st_mtime > before.get(p.name, 0)]
     if not new_files:
@@ -89,6 +98,78 @@ def _run_codex_research(paper_name: str, pdf_url: str | None, log) -> dict:
     html_path = new_files[0]
     html = html_path.read_text(encoding="utf-8", errors="replace")
     return db.upsert_from_html(html_path, html)
+
+
+def _run_codex_process(cmd: list[str], log) -> None:
+    output: deque[str] = deque(maxlen=80)
+    lines: queue.Queue[str | None] = queue.Queue()
+    proc = subprocess.Popen(
+        cmd,
+        cwd=str(PAPERS_DIR.parent),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+    )
+
+    def read_output() -> None:
+        try:
+            assert proc.stdout is not None
+            for line in proc.stdout:
+                lines.put(line.rstrip())
+        finally:
+            lines.put(None)
+
+    threading.Thread(target=read_output, name="codex-output-reader", daemon=True).start()
+    log(f"Codex CLI 已启动，pid={proc.pid}，等待生成 HTML", "generating", "generating")
+
+    started_at = time.monotonic()
+    last_heartbeat = started_at
+    reader_done = False
+    timeout_seconds = 7200
+
+    while True:
+        try:
+            line = lines.get(timeout=1)
+        except queue.Empty:
+            line = None
+        if line is None:
+            reader_done = reader_done or proc.poll() is not None
+        elif line.strip():
+            text = _compact_codex_line(line)
+            output.append(text)
+            if _should_surface_codex_line(text):
+                log(text, "generating", "generating")
+
+        now = time.monotonic()
+        if proc.poll() is None and now - last_heartbeat >= 60:
+            minutes = int((now - started_at) // 60)
+            log(f"Codex 仍在运行，已等待约 {minutes} 分钟", "generating", "generating")
+            last_heartbeat = now
+        if proc.poll() is None and now - started_at > timeout_seconds:
+            proc.kill()
+            raise RuntimeError("Codex 执行超过 120 分钟，已自动终止")
+        if proc.poll() is not None and reader_done and lines.empty():
+            break
+
+    code = proc.wait()
+    log(f"Codex CLI 已结束，退出码 {code}", "generating")
+    if code != 0:
+        tail = "\n".join(output) or "Codex 执行失败，但没有输出错误详情"
+        raise RuntimeError(tail[-4000:])
+
+
+def _compact_codex_line(line: str) -> str:
+    text = " ".join(line.strip().split())
+    return text[:600]
+
+
+def _should_surface_codex_line(line: str) -> bool:
+    if not line:
+        return False
+    lower = line.lower()
+    noisy = ("tokens used", "working", "thinking", "session id")
+    return not any(part in lower for part in noisy)
 
 
 def _run_single_task(task: dict) -> None:
@@ -110,7 +191,7 @@ def _run_batch_item(item: dict) -> None:
         research.append_queue_log(task_id, text, typ, status)
 
     try:
-        research.update_queue_item(task_id, status="pending", message="准备开始")
+        research.update_queue_item(task_id, status="researching", message="准备开始")
         log("开始批量研究任务", "system", "researching")
         result = _run_codex_research(item["paper_name"], item.get("pdf_url"), log)
         with db.connect() as con:
