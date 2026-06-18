@@ -6,8 +6,8 @@ venv/
 env/
 .DS_Store
 
-data/
-*.db
+# data/
+# *.db
 *.db-shm
 *.db-wal
 
