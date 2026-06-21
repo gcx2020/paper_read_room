@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VLA-JEPA - 论文精读</title>
+<style>
+:root{--bg:#fbfaf7;--panel:#fffdf8;--ink:#1f2623;--muted:#64736d;--line:#ddd7ca;--soft:#eef4ea;--soft2:#f6eee1;--accent:#1f5d50;--accent2:#a14f3d;--code:#f1e8d8;--nav:#f3f0e8;--shadow:rgba(31,93,80,.08)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Noto Sans SC","PingFang SC","Microsoft YaHei",Arial,sans-serif;font-size:17px;line-height:1.78}.layout{min-height:100vh;display:grid;grid-template-columns:210px minmax(0,1fr)}nav{position:sticky;top:0;height:100vh;overflow:auto;background:var(--nav);border-right:1px solid var(--line);padding:20px 12px}.brand{margin:0 0 14px;color:var(--accent);font-size:12px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}nav a{display:block;padding:7px 9px;margin:2px 0;border-radius:8px;color:#34433d;text-decoration:none;font-size:14px}nav a:hover{background:#e6eadf;color:var(--accent2)}main{width:min(980px,calc(100vw - 260px));margin:0 auto;padding:42px 32px 76px}section{scroll-margin-top:24px}.hero{padding:34px 0 26px;border-bottom:1px solid var(--line)}.kicker{font-size:13px;color:var(--accent2);font-weight:900;letter-spacing:.1em;text-transform:uppercase}h1{margin:12px 0 14px;font-size:clamp(34px,5vw,56px);line-height:1.08;letter-spacing:-.01em}h2{margin:52px 0 16px;padding-top:30px;border-top:1px solid var(--line);font-size:30px;line-height:1.22}h3{margin:30px 0 10px;font-size:22px;line-height:1.35}.lead{max-width:870px;color:#2f3d38;font-size:20px}.grid3,.grid2{display:grid;gap:13px;margin:18px 0}.grid3{grid-template-columns:repeat(3,1fr)}.grid2{grid-template-columns:1fr 1fr}.card,.callout,.figure,.tablewrap,.formula,details,.missing{background:rgba(255,253,248,.97);border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 28px var(--shadow)}.card{padding:15px 16px}.card b{display:block;margin-bottom:5px;color:var(--accent);font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}.callout{margin:18px 0;padding:16px 18px;background:var(--soft)}.callout strong{color:var(--accent2)}.missing{margin:18px 0;padding:16px 18px;background:#fff7ef;border-color:#e2c5ad;color:#6b3f2f}.buttons{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}.btn{display:inline-flex;align-items:center;border:1px solid var(--accent);border-radius:999px;padding:8px 13px;color:var(--accent);background:var(--panel);text-decoration:none;font-size:14px;font-weight:850}.btn:hover{color:white;background:var(--accent)}.figure{margin:22px 0;padding:14px;overflow:auto}.figure img{display:block;max-width:100%;height:auto;margin:0 auto;border-radius:8px;background:white}.caption{margin-top:10px;color:var(--muted);font-size:14px}.tablewrap{margin:18px 0;overflow:auto}table{width:100%;min-width:760px;border-collapse:collapse;background:var(--panel);font-size:14px}th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{background:#ece7d8;color:#20362f}tr:last-child td{border-bottom:0}.best{color:var(--accent2);font-weight:900}.note{color:var(--muted);font-size:14px}.formula{margin:16px 0;padding:14px 16px;background:var(--code);overflow:auto}.eqtag{text-align:right;color:var(--muted);font-size:13px}.math{margin:8px 0;text-align:center;font-size:18px;line-height:1.75;white-space:normal;font-family:Menlo,Consolas,monospace}.latex{margin-top:6px;color:#5d5146;font-family:Menlo,Consolas,monospace;font-size:13px;white-space:pre-wrap}.pill{display:inline-block;margin:2px 4px 2px 0;padding:2px 8px;border:1px solid #c9baa4;border-radius:999px;background:#f7eddd;font-size:13px;font-weight:850}details{margin:18px 0;padding:13px 16px}summary{cursor:pointer;color:var(--accent);font-weight:900}ul{padding-left:1.2em}li{margin:4px 0}code{font-family:Menlo,Consolas,monospace;background:#eee7d8;border-radius:4px;padding:1px 4px}.footer{margin-top:42px;color:var(--muted);font-size:13px}@media(max-width:900px){.layout{display:block}nav{position:static;height:auto;white-space:nowrap;overflow:auto;border-right:0;border-bottom:1px solid var(--line);padding:12px}.brand,nav a{display:inline-block}.brand{margin:0 12px 0 0}main{width:100%;padding:26px 16px 62px}.grid2,.grid3{grid-template-columns:1fr}table{min-width:680px}body{font-size:16px}h1{font-size:36px}.math{text-align:left;font-size:15px}}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav aria-label="目录">
+  <div class="brand">Paper Read Room</div>
+  <a href="#overview">论文概览</a>
+  <a href="#resources">资源信息</a>
+  <a href="#motivation">背景动机</a>
+  <a href="#bottleneck">核心瓶颈</a>
+  <a href="#pipeline">方法地图</a>
+  <a href="#method">方法精读</a>
+  <a href="#experiments">实验设置</a>
+  <a href="#results">主要结果</a>
+  <a href="#ablation">消融分析</a>
+  <a href="#visual">可视化</a>
+  <a href="#limits">局限假设</a>
+  <a href="#insights">后续启发</a>
+  <a href="#summary">总结</a>
+</nav>
+<main>
+<section id="overview" class="hero">
+  <div class="kicker">arXiv:2602.10098v2 / Vision-Language-Action Pretraining</div>
+  <h1>VLA-JEPA: Enhancing Vision-Language-Action Model with Latent World Model</h1>
+  <p class="lead">这篇论文的核心不是再发明一个动作头，而是重新定义“从视频学 latent action”这件事：未来帧只进入 frozen target encoder 生成监督目标，学生路径只能看当前观测和指令，在 latent world model 中预测未来状态，从而避免把 future image 直接压进 latent action 的信息泄漏。</p>
+  <div class="grid3">
+    <div class="card"><b>一句话贡献</b>提出 leakage-free state prediction 的 VLA-JEPA，把 JEPA 式 latent-space prediction 用作 VLA 预训练，再用 flow matching action head 做机器人动作生成。</div>
+    <div class="card"><b>研究问题</b>现有 latent-action VLA 往往把帧差、背景运动、视角变化和 future-frame shortcut 学成“动作”，导致表示可预测但不一定可控。</div>
+    <div class="card"><b>主要结果</b>在 LIBERO 平均 97.2、LIBERO-Plus 平均 79.5，并在 SimplerEnv Google Robot 平均 65.2；真实 Franka 实验中 ID 和 layout OOD 最优。</div>
+  </div>
+  <div class="buttons">
+    <a class="btn" target="_blank" rel="noopener" href="https://arxiv.org/abs/2602.10098">arXiv</a>
+    <a class="btn" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2602.10098">PDF</a>
+    <a class="btn" target="_blank" rel="noopener" href="https://arxiv.org/html/2602.10098v2">arXiv HTML</a>
+    <a class="btn" target="_blank" rel="noopener" href="https://ginwind.github.io/VLA-JEPA/">Project</a>
+    <a class="btn" target="_blank" rel="noopener" href="https://github.com/ginwind/VLA-JEPA/">GitHub</a>
+    <a class="btn" target="_blank" rel="noopener" href="https://huggingface.co/ginwind/VLA-JEPA/">Hugging Face</a>
+  </div>
+</section>
+
+<section id="resources">
+  <h2>投稿与资源信息</h2>
+  <p>arXiv 页面显示 v1 提交于 2026-02-10，v2 修订于 2026-02-14；论文 HTML 中首页日期为 2026-03-22。项目页公开了 arXiv、Code 和 Hugging Face 链接。未找到公开 OpenReview、会议接收状态、Oral/Spotlight/Poster 或 submission number。</p>
+  <div class="tablewrap"><table>
+    <tr><th>项目</th><th>信息</th></tr>
+    <tr><td>标题</td><td>VLA-JEPA: Enhancing Vision-Language-Action Model with Latent World Model</td></tr>
+    <tr><td>作者</td><td>Jingwen Sun, Wenyao Zhang, Zekun Qi, Shaojie Ren, Zezhi Liu, Hanxin Zhu, Guangzhong Sun, Xin Jin, Zhibo Chen</td></tr>
+    <tr><td>机构</td><td>University of Science and Technology of China, Zhongguancun Academy, Shanghai Jiao Tong University, Tsinghua University, Eastern Institute of Technology, University of Chinese Academy of Sciences, Nankai University</td></tr>
+    <tr><td>arXiv</td><td>2602.10098v2；v1: 2026-02-10；v2: 2026-02-14；类别 cs.RO / cs.CV；DOI: 10.48550/arXiv.2602.10098。</td></tr>
+    <tr><td>资源</td><td>Project: <code>ginwind.github.io/VLA-JEPA</code>；Code: <code>github.com/ginwind/VLA-JEPA</code>；Hugging Face: <code>huggingface.co/ginwind/VLA-JEPA</code>。</td></tr>
+    <tr><td>接收状态</td><td>未找到公开接收信息、OpenReview 页面、会议/Workshop 页面或 submission number。</td></tr>
+  </table></div>
+</section>
+
+<section id="motivation">
+  <h2>背景动机</h2>
+  <p>VLA 模型想利用互联网规模视频来减少机器人动作标注依赖。问题在于：视频里没有真实机器人控制量，很多方法只能先学一个 latent action，再把 latent action 对齐到机器人动作。论文认为这一路线的关键风险是“学到的 latent action 不像动作”：它可能更像压缩后的帧差、光照变化、相机运动、桌布纹理或未来图像本身。</p>
+  <p>作者把现有 latent-action pretraining 的失败模式归纳为四类：像素级目标偏向 appearance；真实人类视频放大 camera motion 和背景噪声；把当前帧和未来帧同时送入学习器会产生 information leakage；多阶段训练让表示、latent action 和 policy learning 之间出现阶段错配。</p>
+  <div class="missing"><strong>未能抽取原图：</strong>本地 shell 无法解析 <code>arxiv.org</code> 和 <code>ginwind.github.io</code>，因此无法把 PDF/项目页图片下载到本地并转成 base64。为避免插入外链、模糊截图或冒充论文 Figure，本文不放论文原图；只放明确标注的“概念示意图 / 非论文原图”。</div>
+</section>
+
+<section id="bottleneck">
+  <h2>核心瓶颈</h2>
+  <div class="grid2">
+    <div class="card"><b>输入与输出</b>预训练输入是当前多视角观测、语言指令和 learnable latent tokens；未来视频帧只通过 V-JEPA2 target encoder 生成 latent target。机器人微调时额外输出连续动作轨迹。</div>
+    <div class="card"><b>baseline 失败模式</b>LAPA/UniVLA 等 latent-action 方法可能过度关注帧间像素变化或无关语义背景；这种表示在训练 loss 上有用，但不一定代表可控状态转移。</div>
+  </div>
+  <div class="callout"><strong>问题本质：</strong>论文要把 latent action 从“解释未来图像长什么样”改成“解释状态如何朝任务相关方向变化”。VLA-JEPA 的建模假设是：如果 future 只作为 latent target，而不作为学生路径输入，模型就更难走 future-frame shortcut。</div>
+</section>
+
+<section id="pipeline">
+  <h2>方法地图</h2>
+  <div class="figure">
+    <img alt="概念示意图，非论文原图：VLA-JEPA 两阶段训练地图" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDQwIiBoZWlnaHQ9IjQ0MCIgdmlld0JveD0iMCAwIDEwNDAgNDQwIj48cmVjdCB3aWR0aD0iMTA0MCIgaGVpZ2h0PSI0NDAiIGZpbGw9IiNmYmZhZjciLz48ZGVmcz48bWFya2VyIGlkPSJhIiBtYXJrZXJXaWR0aD0iMTAiIG1hcmtlckhlaWdodD0iMTAiIHJlZlg9IjgiIHJlZlk9IjMiIG9yaWVudD0iYXV0byI+PHBhdGggZD0iTTAsMCBMOSwzIEwwLDYgWiIgZmlsbD0iIzFmNWQ1MCIvPjwvbWFya2VyPjwvZGVmcz48c3R5bGU+dGV4dHtmb250LWZhbWlseTpBcmlhbCxzYW5zLXNlcmlmO2ZpbGw6IzFmMjYyM30udHtmb250LXNpemU6MjVweDtmb250LXdlaWdodDo3MDB9LnN7Zm9udC1zaXplOjE3cHh9LnNtYWxse2ZvbnQtc2l6ZToxNHB4O2ZpbGw6IzY0NzM2ZH0uYm94e2ZpbGw6I2ZmZmRmODtzdHJva2U6IzFmNWQ1MDtzdHJva2Utd2lkdGg6MjtyeDoxMH0uc29mdHtmaWxsOiNlZWY0ZWE7c3Ryb2tlOiNhMTRmM2Q7c3Ryb2tlLXdpZHRoOjI7cng6MTB9LmRhcmt7ZmlsbDojNTk2MzVlO3J4OjEwfS5kYXJrdHh0e2ZpbGw6d2hpdGU7Zm9udC1zaXplOjE4cHh9LmxpbmV7c3Ryb2tlOiMxZjVkNTA7c3Ryb2tlLXdpZHRoOjM7ZmlsbDpub25lO21hcmtlci1lbmQ6dXJsKCNhKX0uZGFzaHtzdHJva2U6I2ExNGYzZDtzdHJva2Utd2lkdGg6MjtzdHJva2UtZGFzaGFycmF5OjYgNjtmaWxsOm5vbmV9PC9zdHlsZT48dGV4dCB4PSIzNiIgeT0iMzgiIGNsYXNzPSJ0Ij5Db25jZXB0IGRpYWdyYW0sIG5vdCBhIHBhcGVyIGZpZ3VyZTogVkxBLUpFUEEgdHJhaW5pbmcgbWFwPC90ZXh0PjxsaW5lIHgxPSIyMCIgeTE9IjIwNSIgeDI9IjEwMjAiIHkyPSIyMDUiIGNsYXNzPSJkYXNoIi8+PHRleHQgeD0iMzYiIHk9Ijc4IiBmaWxsPSIjYTE0ZjNkIiBmb250LXNpemU9IjIwIiBmb250LXdlaWdodD0iNzAwIj5JLiBIdW1hbiBWaWRlbyBQcmV0cmFpbmluZzwvdGV4dD48cmVjdCB4PSI1MCIgeT0iMTA1IiB3aWR0aD0iMTY1IiBoZWlnaHQ9IjYyIiBjbGFzcz0iYm94Ii8+PHRleHQgeD0iNzgiIHk9IjE0MCIgY2xhc3M9InMiPkh1bWFuIHZpZGVvPC90ZXh0PjxyZWN0IHg9IjI3NSIgeT0iOTIiIHdpZHRoPSIxODUiIGhlaWdodD0iNzgiIGNsYXNzPSJib3giLz48dGV4dCB4PSIzMDQiIHk9IjEyMyIgY2xhc3M9InMiPlYtSkVQQTIgZW5jb2RlcjwvdGV4dD48dGV4dCB4PSIzMTYiIHk9IjE0OCIgY2xhc3M9InNtYWxsIj5mdXR1cmUgbGF0ZW50IHRhcmdldDwvdGV4dD48cmVjdCB4PSI1MjAiIHk9Ijg4IiB3aWR0aD0iMjEwIiBoZWlnaHQ9IjgyIiBjbGFzcz0iZGFyayIvPjx0ZXh0IHg9IjU3MiIgeT0iMTI2IiBjbGFzcz0iZGFya3R4dCI+UXdlbjMtVkw8L3RleHQ+PHRleHQgeD0iNTU4IiB5PSIxNTEiIGNsYXNzPSJkYXJrdHh0Ij5sYXRlbnQgYWN0aW9uIHRva2VuczwvdGV4dD48cmVjdCB4PSI3OTAiIHk9IjkwIiB3aWR0aD0iMTk1IiBoZWlnaHQ9IjgwIiBjbGFzcz0ic29mdCIvPjx0ZXh0IHg9IjgyNyIgeT0iMTIzIiBjbGFzcz0icyI+TGF0ZW50IHdvcmxkIG1vZGVsPC90ZXh0Pjx0ZXh0IHg9IjgyMyIgeT0iMTQ4IiBjbGFzcz0ic21hbGwiPnByZWRpY3QgZnV0dXJlIHN0YXRlPC90ZXh0PjxwYXRoIGQ9Ik0yMTUgMTM2IEgyNzUiIGNsYXNzPSJsaW5lIi8+PHBhdGggZD0iTTQ2MCAxMzAgSDUyMCIgY2xhc3M9ImxpbmUiLz48cGF0aCBkPSJNNzMwIDEzMCBINzkwIiBjbGFzcz0ibGluZSIvPjx0ZXh0IHg9IjcyNSIgeT0iNzIiIGNsYXNzPSJzbWFsbCI+YWxpZ25tZW50IG9ubHk7IGZ1dHVyZSBmcmFtZXMgYXJlIHRhcmdldHMsIG5vdCBpbnB1dHM8L3RleHQ+PHRleHQgeD0iMzYiIHk9IjI0NiIgZmlsbD0iI2ExNGYzZCIgZm9udC1zaXplPSIyMCIgZm9udC13ZWlnaHQ9IjcwMCI+SUkuIFJvYm90IERhdGEgRmluZXR1bmluZzwvdGV4dD48cmVjdCB4PSI1MCIgeT0iMjg1IiB3aWR0aD0iMTY1IiBoZWlnaHQ9IjYyIiBjbGFzcz0iYm94Ii8+PHRleHQgeD0iNzgiIHk9IjMyMCIgY2xhc3M9InMiPlJvYm90IHZpZGVvPC90ZXh0PjxyZWN0IHg9IjI3NSIgeT0iMjcwIiB3aWR0aD0iMTgwIiBoZWlnaHQ9IjgwIiBjbGFzcz0iYm94Ii8+PHRleHQgeD0iMzA5IiB5PSIzMDAiIGNsYXNzPSJzIj5WaXNpb24gZW5jb2RlcjwvdGV4dD48dGV4dCB4PSIzMDIiIHk9IjMyNiIgY2xhc3M9InNtYWxsIj5vYnNlcnZhdGlvbiB0b2tlbnM8L3RleHQ+PHJlY3QgeD0iNTAwIiB5PSIyNzAiIHdpZHRoPSIyMjAiIGhlaWdodD0iODIiIGNsYXNzPSJkYXJrIi8+PHRleHQgeD0iNTUyIiB5PSIzMDciIGNsYXNzPSJkYXJrdHh0Ij5Rd2VuMy1WTDwvdGV4dD48dGV4dCB4PSI1MjYiIHk9IjMzMyIgY2xhc3M9ImRhcmt0eHQiPmxhdGVudCArIGFjdGlvbiBxdWVyaWVzPC90ZXh0PjxyZWN0IHg9Ijc3NSIgeT0iMjUyIiB3aWR0aD0iMTkwIiBoZWlnaHQ9IjYyIiBjbGFzcz0ic29mdCIvPjx0ZXh0IHg9IjgwNSIgeT0iMjg4IiBjbGFzcz0icyI+QWxpZ25tZW50IGxvc3M8L3RleHQ+PHJlY3QgeD0iNzc1IiB5PSIzMzQiIHdpZHRoPSIxOTAiIGhlaWdodD0iNjIiIGNsYXNzPSJzb2Z0Ii8+PHRleHQgeD0iODAyIiB5PSIzNzAiIGNsYXNzPSJzIj5GbG93IGFjdGlvbiBsb3NzPC90ZXh0PjxwYXRoIGQ9Ik0yMTUgMzE2IEgyNzUiIGNsYXNzPSJsaW5lIi8+PHBhdGggZD0iTTQ1NSAzMTAgSDUwMCIgY2xhc3M9ImxpbmUiLz48cGF0aCBkPSJNNzIwIDI5NCBINzc1IiBjbGFzcz0ibGluZSIvPjxwYXRoIGQ9Ik03MjAgMzM0IEg3NzUiIGNsYXNzPSJsaW5lIi8+PHRleHQgeD0iNzgiIHk9IjQwMCIgY2xhc3M9InNtYWxsIj5LZXkgY29uc3RyYWludDogdGhlIHN0dWRlbnQgcGF0aCBzZWVzIG9ubHkgY3VycmVudCBvYnNlcnZhdGlvbnM7IGZ1dHVyZSBmcmFtZXMgc3VwZXJ2aXNlIHRhcmdldCBsYXRlbnRzIG9ubHkuPC90ZXh0Pjwvc3ZnPg==">
+    <div class="caption">概念示意图，非论文原图。它只表达论文 Figure 2 和方法章节确认的数据流：human video 只用 alignment loss 学 latent world dynamics；robot data 同时使用 latent alignment 和 flow action loss。论文原图未能本地抽取，因此这里不称为论文 Figure。</div>
+  </div>
+  <p>训练路径可以理解成两段。第一段在 action-free human videos 上学 latent state transition：V-JEPA2 encoder 产生未来状态 latent target，VLM 只看初始观测和语言，通过 latent tokens 生成 transition representation，再由 world model 预测未来 latent states。第二段在 robot demonstrations 上保留这个 world-model alignment，同时加入 conditional flow matching action head，让 latent transition representation 成为连续动作生成的条件。</p>
+</section>
+
+<section id="method">
+  <h2>核心方法精读</h2>
+  <h3>1. World State Encoder：把未来监督从像素移到 latent state</h3>
+  <p>论文先用 frozen V-JEPA2 encoder 把每个视角的帧编码为状态表示，再把多视角表示拼接成统一 world state。这里的关键不是 encoder 名字，而是监督对象：模型不重建 future pixels，而是对齐 future latent state。这样可以弱化光照、纹理、相机抖动等高方差低控制因素。</p>
+  <div class="formula">
+    <div class="eqtag">论文 Equation (1)</div>
+    <div class="math">s_{t_i} = ||_v F(I_{v,t_i})</div>
+    <div class="latex">F 是单视角 V-JEPA2 encoder，|| 表示按视角拼接。s_{t_i} 是第 i 个时间点的统一 world-state representation。</div>
+  </div>
+
+  <h3>2. Leakage-Free Latent Action：未来只做 target，不做 input</h3>
+  <p>VLM backbone 采用 Qwen3-VL，并加入 learnable latent tokens。对每个时间步，VLM 只基于初始多视角观测和语言指令，把 latent token 映射为 transition representation。未来帧不进入 VLM 输入；它只通过 frozen target encoder 形成监督目标。这一点直接针对现有 latent-action pipeline 中“latent action 变成 future image 压缩码”的 shortcut。</p>
+  <div class="formula">
+    <div class="eqtag">论文 Equation (2) 与 (3)</div>
+    <div class="math">z_{t_i}=p^{VLM}_{theta}(&lt;latent_i&gt; | {I_{j,t_0}}_{j=0}^{v}, ell)</div>
+    <div class="math">hat{s}_{t_{1:i+1}}=p^{WM}_{theta}(s_{t_{0:i}}, z_{t_{0:i}})</div>
+    <div class="latex">z_{t_i} 是 latent action token 对应的状态转移表示；world model 用历史 latent states 与这些 z 预测下一段 future states。</div>
+  </div>
+  <p>时间注意力也服务于这个目标：同一时间步内 latent/action/world-state tokens 双向注意；跨时间步严格 causal，只允许看当前和过去。这让 world model 保留“状态随时间推进”的结构，而不是任意读未来。</p>
+
+  <h3>3. JEPA Alignment Loss：把预测目标收敛到语义 latent 空间</h3>
+  <p>作者从 JEPA 角度解释 objective：frozen target encoder 提供确定性的 latent target，online predictor/world model 输出预测状态。论文先写成语义空间 predictive log-likelihood 的 ELBO/KL 形式；由于 target encoder 是 deterministic embedding，实际训练退化为 latent-space reconstruction/alignment loss。</p>
+  <div class="formula">
+    <div class="eqtag">论文 Equation (4) 与 (5)</div>
+    <div class="math">-D_KL[F(.) || p^{WM}_{theta}]</div>
+    <div class="math">L_WM = sum_{k=1}^{T} E_{s_{t_k}~F(.)}(hat{s}_{t_k} - s_{t_k})</div>
+    <div class="latex">论文公式未显式写范数；工程上应理解为预测 latent state 与 target latent state 的对齐损失。它约束 latent token 必须解释未来状态转移。</div>
+  </div>
+
+  <h3>4. Robot Action Head：latent world dynamics 条件化 flow matching</h3>
+  <p>在机器人数据上，模型追加 embodied action tokens，VLM 基于当前观测、语言和 latent tokens 生成全局动作条件表示 \(z_a\)。动作头采用 DiT-B 风格的 conditional flow matching，把高斯噪声沿时间插值积分到连续动作轨迹。最终训练目标是 action flow loss 加上 world-model alignment loss。</p>
+  <div class="formula">
+    <div class="eqtag">论文 Equation (6)-(9)</div>
+    <div class="math">z_a=p^{VLM}_{theta}(&lt;action&gt; | {I_{i,t_0}}_{i=0}^{v}, ell, &lt;latent_i&gt;)</div>
+    <div class="math">a_t=(1-t)epsilon + t a_{0:H},  t ~ U(0,1)</div>
+    <div class="math">L_FM=E[ || v_theta(a_t,t | z_a) - (a_{0:H}-epsilon) ||_2^2 ]</div>
+    <div class="math">L = L_FM + beta L_WM</div>
+    <div class="latex">z_a 把 latent transition 表示转成动作生成条件；L_WM 继续约束状态转移语义，L_FM 负责把条件映射到连续 end-effector action。</div>
+  </div>
+
+  <h3>方法设计小结</h3>
+  <div class="tablewrap"><table>
+    <tr><th>设计选择</th><th>解决的问题</th><th>技术机制</th><th>实验证据</th><th>潜在局限</th></tr>
+    <tr><td>future 只作 target</td><td>防止 latent action 直接编码未来图像</td><td>target encoder 读未来；VLM/student 只读当前观测与语言</td><td>Figure 6 注意力分析显示 VLA-JEPA 更聚焦手、机械臂和被操作物体</td><td>如果 target encoder latent 本身不够 action-centric，仍可能学到弱动态表示</td></tr>
+    <tr><td>latent-space prediction</td><td>像素重建过度关注纹理、光照和相机运动</td><td>用 V-JEPA2 latent state 替代 pixel reconstruction</td><td>LIBERO-Plus 在 Language/Light/Background/Layout 扰动上优势明显</td><td>latent 空间可解释性较弱，调试比像素预测更困难</td></tr>
+    <tr><td>human + robot unified training</td><td>人类视频无动作标签，机器人数据规模小</td><td>human video 用 L_WM；robot data 用 L_FM + beta L_WM</td><td>Table 1/3 与 w/o human videos 对比显示人类视频主要增强鲁棒性</td><td>SimplerEnv 上 w/o human videos 有时更高，说明人类视频不直接带来控制动态</td></tr>
+    <tr><td>future horizon T=8</td><td>latent tokens 需要覆盖足够但不过量的动态信息</td><td>每帧间 transition 对应 latent action token，调节未来视频 horizon</td><td>Table 4 中 T=8 平均 96.1，高于 T=4 的 94.8 和 T=16 的 95.5</td><td>最佳 horizon 可能依赖 action horizon、任务长度和数据帧率</td></tr>
+  </table></div>
+</section>
+
+<section id="experiments">
+  <h2>实验设置</h2>
+  <p>实验覆盖三类模拟评估和一类真实机器人评估。LIBERO 是 in-distribution simulation；SimplerEnv 是 real-to-sim gap OOD，含 Google Robot 和 WidowX；LIBERO-Plus 通过 camera、robot、language、light、background、noise、layout 七类扰动测 VLA 鲁棒性；真实实验使用 Franka Research 3 + Robotiq 2F-85，100 条三任务示范做 post-training，并评估 ID、task OOD、object-layout OOD。</p>
+  <div class="callout"><strong>如何读指标：</strong>所有核心表格都是 success rate，越高越好。LIBERO 每个 suite 50 episodes per task、500 episodes per suite；LIBERO-Plus 的七列不能简单等价，因为每列扰动测试的失败来源不同；SimplerEnv 的 Google Robot 与 WidowX 是不同 embodiment，不应跨列直接比较绝对难度。</div>
+</section>
+
+<section id="results">
+  <h2>主要结果</h2>
+  <h3>结果 1：LIBERO 上是否达到一线 VLA 水平？</h3>
+  <p>Table 1 的结论很直接：VLA-JEPA 平均 97.2，是表中最高；在 Object 和 LIBERO-10 上分别达到 99.6 和 95.8。相比 π0.5 的 96.9，平均只高 0.3，但关键点是 VLA-JEPA 使用了更简化的 latent-action 预训练路径；相比 UniVLA 的 95.2，平均提升 2.0。</p>
+  <div class="tablewrap"><table>
+    <tr><th>Method</th><th>Spatial</th><th>Object</th><th>Goal</th><th>LIBERO-10</th><th>Avg</th></tr>
+    <tr><td>LAPA</td><td>73.8</td><td>74.6</td><td>58.8</td><td>55.4</td><td>65.7</td></tr>
+    <tr><td>UniVLA</td><td>96.5</td><td>96.8</td><td>95.6</td><td>92.0</td><td>95.2</td></tr>
+    <tr><td>OpenVLA-OFT</td><td>97.6</td><td>98.4</td><td>97.9</td><td>94.5</td><td>97.1</td></tr>
+    <tr><td>π0</td><td>96.8</td><td>98.8</td><td>95.8</td><td>85.2</td><td>94.2</td></tr>
+    <tr><td>π0.5</td><td class="best">98.8</td><td>98.2</td><td class="best">98.0</td><td>92.4</td><td>96.9</td></tr>
+    <tr><td>VLA-JEPA</td><td>96.2</td><td class="best">99.6</td><td>97.2</td><td class="best">95.8</td><td class="best">97.2</td></tr>
+    <tr><td>VLA-JEPA w/o human videos</td><td>94.8</td><td class="best">99.6</td><td>95.8</td><td>94.0</td><td>96.1</td></tr>
+  </table></div>
+
+  <h3>结果 2：OOD 和真实部署是否更稳？</h3>
+  <p>LIBERO-Plus 是本文最能支撑“鲁棒性”的证据。VLA-JEPA 在 7 类扰动中 5 类最好，平均 79.5，明显超过 OpenVLA-OFT 的 69.6 和 π0-Fast 的 61.6。提升最明显的是 Robot、Language、Light、Background、Layout，这些正好对应论文想解决的 task-agnostic disturbance 和 appearance bias。</p>
+  <div class="tablewrap"><table>
+    <tr><th>Method</th><th>Camera</th><th>Robot</th><th>Language</th><th>Light</th><th>Background</th><th>Noise</th><th>Layout</th><th>Avg</th></tr>
+    <tr><td>UniVLA</td><td>1.8</td><td>46.2</td><td>69.6</td><td>69.0</td><td>81.0</td><td>21.2</td><td>31.9</td><td>42.9</td></tr>
+    <tr><td>OpenVLA-OFT</td><td>56.4</td><td>31.9</td><td>79.5</td><td>88.7</td><td>93.3</td><td>75.8</td><td>74.2</td><td>69.6</td></tr>
+    <tr><td>π0</td><td>13.8</td><td>6.0</td><td>58.8</td><td>85.0</td><td>81.4</td><td class="best">79.0</td><td>68.9</td><td>53.6</td></tr>
+    <tr><td>π0-Fast</td><td class="best">65.1</td><td>21.6</td><td>61.0</td><td>73.2</td><td>73.2</td><td>74.4</td><td>68.8</td><td>61.6</td></tr>
+    <tr><td>WorldVLA</td><td>0.1</td><td>27.9</td><td>41.6</td><td>43.7</td><td>17.1</td><td>10.9</td><td>38.0</td><td>25.0</td></tr>
+    <tr><td>VLA-JEPA</td><td>63.3</td><td class="best">67.1</td><td class="best">85.4</td><td class="best">95.6</td><td class="best">93.6</td><td>66.3</td><td class="best">85.1</td><td class="best">79.5</td></tr>
+  </table></div>
+
+  <h3>结果 3：SimplerEnv 上的 real-to-sim gap</h3>
+  <p>在 SimplerEnv，VLA-JEPA Google Robot 平均 65.2，是表中最高；WidowX 平均 57.3，与 LAPA 持平且低于部分单项最优。论文特别指出，villa-X 使用的数据规模远大于 VLA-JEPA、UniVLA、RoboVLMs、Moto 等方法；因此 VLA-JEPA 的意义在于用更少数据取得强竞争结果，而不是在每个 embodiment 的每个任务上统治。</p>
+  <div class="tablewrap"><table>
+    <tr><th>Method</th><th>Google Pick</th><th>Google Move</th><th>Google Drawer</th><th>Google Place</th><th>Google Avg</th><th>WidowX Spoon</th><th>Carrot</th><th>Block</th><th>Eggplant</th><th>WidowX Avg</th></tr>
+    <tr><td>villa-X</td><td>81.7</td><td>55.4</td><td>38.4</td><td>4.2</td><td>44.9</td><td>48.3</td><td>24.2</td><td>19.2</td><td>71.7</td><td>40.8</td></tr>
+    <tr><td>RoboVLMs</td><td>77.3</td><td>61.7</td><td>43.5</td><td>24.1</td><td>51.7</td><td>45.8</td><td>20.8</td><td>4.2</td><td class="best">79.2</td><td>37.5</td></tr>
+    <tr><td>π0-Fast</td><td>75.3</td><td class="best">67.5</td><td>42.9</td><td>-</td><td>-</td><td>29.1</td><td>21.9</td><td>10.8</td><td>66.7</td><td>48.3</td></tr>
+    <tr><td>VLA-JEPA</td><td class="best">88.3</td><td>64.1</td><td class="best">59.3</td><td class="best">49.1</td><td class="best">65.2</td><td class="best">75.0</td><td class="best">70.8</td><td>12.5</td><td>70.8</td><td class="best">57.3</td></tr>
+    <tr><td>VLA-JEPA w/o human videos</td><td>85.3</td><td>66.7</td><td>75.5</td><td>86.1</td><td>78.4</td><td>75.0</td><td>54.2</td><td>20.8</td><td>79.2</td><td>57.3</td></tr>
+  </table></div>
+</section>
+
+<section id="ablation">
+  <h2>消融分析</h2>
+  <h3>Q1：human video 到底带来了什么？</h3>
+  <p>Table 1-3 的 w/o human videos 结果说明，人类视频不是直接替代机器人控制数据。LIBERO 平均从 96.1 提到 97.2，LIBERO-Plus 从 62.9 提到 79.5，增强主要体现在扰动鲁棒性；但 SimplerEnv 上 w/o human videos 在 Google Robot 平均反而更高。作者据此判断：人类视频主要强化已有技能的鲁棒性和稳定性，例如 repeated grasping，而不是直接教授机器人动力学。</p>
+
+  <h3>Q2：统一预训练是否比多阶段 latent-action pipeline 更合理？</h3>
+  <p>Figure 6 的注意力可视化用于回答这个问题。LAPA 的 latent actions 关注过密视觉信息，包含操作无关桌面细节；UniVLA 通过文本语义缓解一部分问题，但会过度关注静止背景物；VLA-JEPA 更聚焦机械臂、手和被操作物体。这个证据支持论文主张：leakage-free latent state prediction 让 latent tokens 更接近 action-relevant transition，而不是 image compression。</p>
+  <div class="figure">
+    <img alt="概念示意图，非论文原图：Figure 6 注意力热图读法" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDQwIiBoZWlnaHQ9IjM1MCIgdmlld0JveD0iMCAwIDEwNDAgMzUwIj48cmVjdCB3aWR0aD0iMTA0MCIgaGVpZ2h0PSIzNTAiIGZpbGw9IiNmYmZhZjciLz48c3R5bGU+dGV4dHtmb250LWZhbWlseTpBcmlhbCwnTm90byBTYW5zIFNDJyxzYW5zLXNlcmlmO2ZpbGw6IzFmMjYyM30udHtmb250LXNpemU6MjVweDtmb250LXdlaWdodDo3MDB9LnN7Zm9udC1zaXplOjE3cHh9LnNtYWxse2ZvbnQtc2l6ZToxNHB4O2ZpbGw6IzY0NzM2ZH0uYm94e2ZpbGw6I2ZmZmRmODtzdHJva2U6I2RkZDdjYTtzdHJva2Utd2lkdGg6MjtyeDo5fS5iYWR7ZmlsbDojZjZlZWUxO3N0cm9rZTojYTE0ZjNkO3N0cm9rZS13aWR0aDoyO3J4Ojl9Lmdvb2R7ZmlsbDojZWVmNGVhO3N0cm9rZTojMWY1ZDUwO3N0cm9rZS13aWR0aDoyO3J4Ojl9LmRvdHtmaWxsOiNhMTRmM2Q7b3BhY2l0eTouMjV9LmZvY3Vze2ZpbGw6IzFmNWQ1MDtvcGFjaXR5Oi43NX08L3N0eWxlPjx0ZXh0IHg9IjM2IiB5PSIzOCIgY2xhc3M9InQiPuamguW/teekuuaEj+Wbvu+8jOmdnuiuuuaWh+WOn+Wbvu+8mkZpZ3VyZSA2IOeahOivu+azlTwvdGV4dD48dGV4dCB4PSIzNiIgeT0iNzAiIGNsYXNzPSJzbWFsbCI+55yf5a6eIEZpZ3VyZSA2IOaYr+azqOaEj+WKm+eDreWbvuOAgui/memHjOS7heeUqOamguW/teWdl+ivtOaYjuiuuuaWh+e7k+iuuu+8muS4jeWQjCBsYXRlbnQtYWN0aW9uIOaWueazleWFs+azqOeahOS/oeaBr+WvhuW6puS4juebuOWFs+aAp+S4jeWQjOOAgjwvdGV4dD48cmVjdCB4PSI1NSIgeT0iMTE1IiB3aWR0aD0iMjcwIiBoZWlnaHQ9IjE1NSIgY2xhc3M9ImJhZCIvPjx0ZXh0IHg9IjgyIiB5PSIxNTAiIGNsYXNzPSJzIj5MQVBBPC90ZXh0Pjx0ZXh0IHg9IjgyIiB5PSIxNzgiIGNsYXNzPSJzbWFsbCI+55uu5qCH5Zu+5YOP5rOE5ryPL+WDj+e0oOW3ruW8guWAvuWQkTwvdGV4dD48Y2lyY2xlIGN4PSIxMjAiIGN5PSIyMjAiIHI9IjE4IiBjbGFzcz0iZG90Ii8+PGNpcmNsZSBjeD0iMTc1IiBjeT0iMjA1IiByPSIyNCIgY2xhc3M9ImRvdCIvPjxjaXJjbGUgY3g9IjI1MCIgY3k9IjIzMCIgcj0iMjgiIGNsYXNzPSJkb3QiLz48Y2lyY2xlIGN4PSIyODUiIGN5PSIxODUiIHI9IjE2IiBjbGFzcz0iZG90Ii8+PHRleHQgeD0iODIiIHk9IjI5OCIgY2xhc3M9InNtYWxsIj7lhbPms6jov4flr4bvvIzljIXlkKvml6DlhbPmoYzpnaIv6IOM5pmv57uG6IqCPC90ZXh0PjxyZWN0IHg9IjM4NSIgeT0iMTE1IiB3aWR0aD0iMjcwIiBoZWlnaHQ9IjE1NSIgY2xhc3M9ImJhZCIvPjx0ZXh0IHg9IjQxMiIgeT0iMTUwIiBjbGFzcz0icyI+VW5pVkxBPC90ZXh0Pjx0ZXh0IHg9IjQxMiIgeT0iMTc4IiBjbGFzcz0ic21hbGwiPuaWh+acrOivreS5iee8k+ino+mDqOWIhuazhOa8jzwvdGV4dD48Y2lyY2xlIGN4PSI0NTUiIGN5PSIyMDUiIHI9IjI2IiBjbGFzcz0iZm9jdXMiLz48Y2lyY2xlIGN4PSI1NjUiIGN5PSIyMjUiIHI9IjMwIiBjbGFzcz0iZG90Ii8+PHRleHQgeD0iNDEyIiB5PSIyOTgiIGNsYXNzPSJzbWFsbCI+5LuN5Y+v6IO95YGP5ZCR6Z2Z5q2i54mp5L2T5oiW6IOM5pmv6K+t5LmJPC90ZXh0PjxyZWN0IHg9IjcxNSIgeT0iMTE1IiB3aWR0aD0iMjcwIiBoZWlnaHQ9IjE1NSIgY2xhc3M9Imdvb2QiLz48dGV4dCB4PSI3NDIiIHk9IjE1MCIgY2xhc3M9InMiPlZMQS1KRVBBPC90ZXh0Pjx0ZXh0IHg9Ijc0MiIgeT0iMTc4IiBjbGFzcz0ic21hbGwiPmxhdGVudCBzdGF0ZSBwcmVkaWN0aW9uICsgbGVha2FnZS1mcmVlPC90ZXh0PjxjaXJjbGUgY3g9Ijc5MCIgY3k9IjIxNiIgcj0iMjIiIGNsYXNzPSJmb2N1cyIvPjxjaXJjbGUgY3g9Ijg0NSIgY3k9IjIwNSIgcj0iMTgiIGNsYXNzPSJmb2N1cyIvPjxjaXJjbGUgY3g9IjkwMCIgY3k9IjIyOSIgcj0iMjAiIGNsYXNzPSJmb2N1cyIvPjx0ZXh0IHg9Ijc0MiIgeT0iMjk4IiBjbGFzcz0ic21hbGwiPuabtOmbhuS4reWcqOaJiy/mnLrmorDoh4Iv6KKr5pON5L2c54mp5L2TPC90ZXh0Pjwvc3ZnPg==">
+    <div class="caption">概念示意图，非论文原图。真实 Figure 6 是 latent action tokens 到 image tokens 的注意力热图；本文只用它解释作者的文字结论，不复刻或冒充原图。</div>
+  </div>
+
+  <h3>Q3：future video horizon 应该多长？</h3>
+  <p>Table 4 显示 T=8 平均最好。T=4 信息不足，LIBERO-10 只有 89.0；T=16 引入冗余，Spatial 下降到 92.8。作者的解释是 latent action token 数等于 frame 数减一，未来 horizon 应接近 action horizon：太短不能覆盖动作动态，太长则混入无关变化。</p>
+  <div class="tablewrap"><table>
+    <tr><th>T</th><th>Spatial</th><th>Object</th><th>Goal</th><th>LIBERO-10</th><th>Avg</th></tr>
+    <tr><td>4</td><td>95.0</td><td>99.2</td><td>95.8</td><td>89.0</td><td>94.8</td></tr>
+    <tr><td>8</td><td>94.8</td><td class="best">99.8</td><td>95.8</td><td class="best">94.0</td><td class="best">96.1</td></tr>
+    <tr><td>16</td><td>92.8</td><td>98.8</td><td class="best">98.0</td><td>92.2</td><td>95.5</td></tr>
+  </table></div>
+</section>
+
+<section id="visual">
+  <h2>可视化与失败模式</h2>
+  <p>论文可视化主要有三类：方法架构图、实验设置图、注意力热图和真实机器人结果图。由于本地未能抽取原图，本文不嵌入这些论文 Figure。就内容而言，Figure 6 最关键，因为它直接说明 VLA-JEPA 的 latent action 更关注操作相关区域；Figure 4 的真实实验则揭示了一个重要 trade-off：VLA-JEPA 的轨迹更稳定且少触发安全边界，但细粒度语言理解弱于部分 baseline，可能抓错指令对象。</p>
+  <p>真实实验还报告了 repeated grasping：VLA-JEPA 在一次抓取失败后会重新张开夹爪再尝试，而 π0 和 π0.5 没有观察到这个技能。作者把它归因于人类视频中存在大量重复抓取知识；这也侧面说明人类视频对“策略鲁棒性和恢复行为”的贡献大于对精确机器人动力学的贡献。</p>
+</section>
+
+<section id="limits">
+  <h2>优点、不足与隐含假设</h2>
+  <div class="grid2">
+    <div class="card"><b>优点</b>目标函数对准了 latent-action VLA 的根本风险：信息泄漏和像素捷径。方法简化成 JEPA pretraining + action-head finetuning，比多阶段 codebook/latent alignment pipeline 更清楚。</div>
+    <div class="card"><b>不足</b>论文未充分量化推理延迟、world model 预测质量与动作安全的因果关系；真实实验只有 100 条示范和三类任务，规模仍小。</div>
+  </div>
+  <p>隐含假设包括：V-JEPA2 latent target 足够 action-relevant；human videos 的状态转移可迁移到机器人控制；future horizon 与 action horizon 的关系在不同帧率和任务中仍成立；LIBERO/LIBERO-Plus/SimplerEnv 的 success rate 能代表真实部署鲁棒性。尤其需要注意，SimplerEnv 中 w/o human videos 的结果并不弱，说明人类视频不是无条件增益。</p>
+</section>
+
+<section id="insights">
+  <h2>后续研究与工程启发</h2>
+  <p>研究上，VLA-JEPA 值得沿三个方向继续验证：更强 target encoder 是否能提供更 action-centric 的 latent state；不同 future horizon、latent token 数和 action horizon 的耦合关系；在更复杂语言组合和动态交互场景中，leakage-free latent world model 是否仍比 subgoal image 或 explicit planner 更稳。</p>
+  <p>工程复现优先检查四件事：未来帧是否完全隔离在 target encoder 路径；world model 的 causal mask 是否正确；latent-action tokens 与 action tokens 的重复数量是否匹配论文配置；flow action head 的 action normalization、denoising timesteps 和 horizon 是否与数据控制频率一致。上线评估还应补充安全边界、错误恢复、长程任务失败原因和 OOD 语言指令测试。</p>
+</section>
+
+<section id="summary">
+  <h2>总结</h2>
+  <p>VLA-JEPA 的核心贡献，是把 latent-action pretraining 从“预测/压缩未来图像变化”改成“无泄漏地预测未来 latent world state”。最有说服力的证据是 LIBERO-Plus 平均 79.5 的鲁棒性结果、Figure 6 的注意力分析和 T=8 horizon 消融。最大局限是人类视频收益并非在所有 benchmark 都稳定，真实机器人实验规模较小，且 latent target 是否真正等价于可控状态转移仍需更强验证。</p>
+</section>
+
+<section id="appendix">
+  <h2>附录：PDF 解析与图表抽取自检</h2>
+  <details><summary>展开自检记录</summary>
+    <ul>
+      <li>PDF 获取：已通过 web 工具读取 arXiv 页面和 arXiv HTML；本机 shell 因 DNS/network 限制无法下载 <code>arxiv.org/pdf/2602.10098</code>，因此未能用 PyMuPDF 本地打开 PDF 或裁剪 PDF 原图。</li>
+      <li>正文解析：已从 arXiv HTML / arXiv abstract / Project Page 确认标题、作者、机构、摘要、章节结构、方法公式、Figure / Table caption 与主要结果。</li>
+      <li>Figure / Table / Equation 定位：已定位 Figure 1-6、Table 1-6、Equation (1)-(9)。</li>
+      <li>复杂图裁剪：未插入任何论文原图裁剪；原因是本地无法下载 PDF/项目图片字节并做 base64 内嵌。为避免外链和伪造原图，只插入 2 张明确标注“概念示意图 / 非论文原图”的 base64 SVG。</li>
+      <li>表格复刻：Table 1、Table 2 关键行、Table 3、Table 4 以 HTML 表格复刻；Table 5/6 的配置在正文与自检中说明，没有单独堆表。</li>
+      <li>图片内嵌：所有插入图片均为 <code>data:image/svg+xml;base64</code>；无外部图片 URL、无 iframe/object/embed、无运行时生成图片。</li>
+      <li>公式：为满足离线自包含，未加载外部 MathJax CDN；关键公式以静态 LaTeX 可读形式展示。已检查无裸露 HTML 比较符导致标签破坏、无明显横向正文溢出。</li>
+      <li>资源检索：已检索 arXiv、Project、GitHub、Hugging Face；未找到 OpenReview、Conference/Workshop 接收状态、Oral/Spotlight/Poster 或 submission number。</li>
+      <li>工具链记录：当前电脑环境为 macOS；运行 agent 组合按用户要求记录为 Codex + GPT-5.5；实际执行使用 zsh、curl、Node.js base64 编码、web 检索工具和本地 HTML/CSS 生成。</li>
+      <li>项目约束：只在 <code>papers/</code> 下新增一个 HTML 文件 <code>2026-vla-jepa.html</code>；未在 <code>papers/</code> 下生成任何非 HTML 文件；未修改项目代码。</li>
+    </ul>
+  </details>
+  <p class="note">外部资源按钮只作为可点击引用链接；正文、样式、表格和示意图均可离线打开。</p>
+</section>
+<p class="footer">Self-contained paper reading page. Generated for Paper Read Room.</p>
+</main>
+</div>
+</body>
+</html>

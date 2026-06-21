@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pi0.7 - 论文精读</title>
+<style>
+:root{--bg:#fbfaf7;--panel:#fffdf8;--ink:#1f2623;--muted:#64736d;--line:#ddd7ca;--soft:#eef4ea;--soft2:#f6eee1;--accent:#1f5d50;--accent2:#a14f3d;--code:#f1e8d8;--nav:#f3f0e8;--shadow:rgba(31,93,80,.08)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Noto Sans SC","PingFang SC","Microsoft YaHei",Arial,sans-serif;font-size:17px;line-height:1.78}.layout{min-height:100vh;display:grid;grid-template-columns:210px minmax(0,1fr)}nav{position:sticky;top:0;height:100vh;overflow:auto;background:var(--nav);border-right:1px solid var(--line);padding:20px 12px}.brand{margin:0 0 14px;color:var(--accent);font-size:12px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}nav a{display:block;padding:7px 9px;margin:2px 0;border-radius:8px;color:#34433d;text-decoration:none;font-size:14px}nav a:hover{background:#e6eadf;color:var(--accent2)}main{width:min(980px,calc(100vw - 260px));margin:0 auto;padding:42px 32px 76px}section{scroll-margin-top:24px}.hero{padding:34px 0 26px;border-bottom:1px solid var(--line)}.kicker{font-size:13px;color:var(--accent2);font-weight:900;letter-spacing:.1em;text-transform:uppercase}h1{margin:12px 0 14px;font-size:clamp(34px,5vw,56px);line-height:1.08;letter-spacing:-.01em}h2{margin:52px 0 16px;padding-top:30px;border-top:1px solid var(--line);font-size:30px;line-height:1.22}h3{margin:30px 0 10px;font-size:22px;line-height:1.35}.lead{max-width:870px;color:#2f3d38;font-size:20px}.grid3,.grid2{display:grid;gap:13px;margin:18px 0}.grid3{grid-template-columns:repeat(3,1fr)}.grid2{grid-template-columns:1fr 1fr}.card,.callout,.figure,.tablewrap,.formula,details,.missing{background:rgba(255,253,248,.97);border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 28px var(--shadow)}.card{padding:15px 16px}.card b{display:block;margin-bottom:5px;color:var(--accent);font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}.callout{margin:18px 0;padding:16px 18px;background:var(--soft)}.callout strong{color:var(--accent2)}.buttons{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}.btn{display:inline-flex;align-items:center;border:1px solid var(--accent);border-radius:999px;padding:8px 13px;color:var(--accent);background:var(--panel);text-decoration:none;font-size:14px;font-weight:850}.btn:hover{color:white;background:var(--accent)}.figure{margin:22px 0;padding:14px;overflow:auto}.figure img{display:block;max-width:100%;height:auto;margin:0 auto;border-radius:8px;background:white}.caption{margin-top:10px;color:var(--muted);font-size:14px}.missing{margin:18px 0;padding:18px;background:#fff7ef;border-color:#e2c5ad;color:#6b3f2f}.tablewrap{margin:18px 0;overflow:auto}table{width:100%;min-width:760px;border-collapse:collapse;background:var(--panel);font-size:14px}th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{background:#ece7d8;color:#20362f}tr:last-child td{border-bottom:0}.best{color:var(--accent2);font-weight:900}.note{color:var(--muted);font-size:14px}.formula{margin:16px 0;padding:14px 16px;background:var(--code);overflow:auto}.eqtag{text-align:right;color:var(--muted);font-size:13px}.math{margin:8px 0;text-align:center;font-size:18px;line-height:1.75;white-space:normal;font-family:Menlo,Consolas,monospace}.latex{margin-top:6px;color:#5d5146;font-family:Menlo,Consolas,monospace;font-size:13px;white-space:pre-wrap}.pill{display:inline-block;margin:2px 4px 2px 0;padding:2px 8px;border:1px solid #c9baa4;border-radius:999px;background:#f7eddd;font-size:13px;font-weight:850}details{margin:18px 0;padding:13px 16px}summary{cursor:pointer;color:var(--accent);font-weight:900}ul{padding-left:1.2em}li{margin:4px 0}code{font-family:Menlo,Consolas,monospace;background:#eee7d8;border-radius:4px;padding:1px 4px}.footer{margin-top:42px;color:var(--muted);font-size:13px}@media(max-width:900px){.layout{display:block}nav{position:static;height:auto;white-space:nowrap;overflow:auto;border-right:0;border-bottom:1px solid var(--line);padding:12px}.brand,nav a{display:inline-block}.brand{margin:0 12px 0 0}main{width:100%;padding:26px 16px 62px}.grid2,.grid3{grid-template-columns:1fr}table{min-width:680px}body{font-size:16px}h1{font-size:36px}.math{text-align:left;font-size:15px}}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav aria-label="目录">
+  <div class="brand">Paper Read Room</div>
+  <a href="#overview">论文概览</a>
+  <a href="#resources">资源信息</a>
+  <a href="#motivation">背景动机</a>
+  <a href="#bottleneck">核心瓶颈</a>
+  <a href="#pipeline">方法地图</a>
+  <a href="#method">方法精读</a>
+  <a href="#experiments">实验设置</a>
+  <a href="#results">主要结果</a>
+  <a href="#ablation">消融分析</a>
+  <a href="#visual">可视化</a>
+  <a href="#limits">局限假设</a>
+  <a href="#insights">后续启发</a>
+  <a href="#summary">总结</a>
+</nav>
+<main>
+<section id="overview" class="hero">
+  <div class="kicker">arXiv:2604.15483v2 / Physical Intelligence</div>
+  <h1>pi0.7: a Steerable Generalist Robotic Foundation Model with Emergent Capabilities</h1>
+  <p class="lead">这篇论文的核心不是提出一个全新的机器人网络结构，而是把“更丰富、更可控的 prompt”作为训练配方：用语言子任务、视觉子目标、episode 质量/速度/错误元数据和控制模式，把大规模异质机器人数据、失败数据、自治 rollout、人体视频和网页多模态数据放进同一个 VLA 训练框架。</p>
+  <div class="grid3">
+    <div class="card"><b>一句话贡献</b>pi0.7 通过多模态上下文条件化，让一个约 5B 参数的通用机器人模型在无需任务级微调时接近专门 RL/SFT policy，并表现出跨任务、跨场景、跨机器人组合泛化。</div>
+    <div class="card"><b>研究问题</b>当机器人数据来源混杂、质量不一、策略不同甚至包含失败时，普通 imitation learning 会平均掉多模态行为；如何让模型既吃下这些数据，又在测试时被精确 steer 到高质量策略。</div>
+    <div class="card"><b>最值得读</b>Figure 2/3 解释架构与 prompt；Figure 6-8 支持 out-of-box dexterity；Figure 9-11 支持指令跟随；Figure 12/13/22 支持跨 embodiment；Figure 18 支持数据多样性与元数据协同。</div>
+  </div>
+  <div class="buttons">
+    <a class="btn" target="_blank" rel="noopener" href="https://arxiv.org/abs/2604.15483">arXiv</a>
+    <a class="btn" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2604.15483">PDF</a>
+    <a class="btn" target="_blank" rel="noopener" href="https://arxiv.org/html/2604.15483v2">arXiv HTML</a>
+    <a class="btn" target="_blank" rel="noopener" href="https://www.pi.website/pi07">Project / Blog</a>
+  </div>
+</section>
+
+<section id="resources">
+  <h2>投稿与资源信息</h2>
+  <p>公开 arXiv 页面显示本文 v1 提交于 2026-04-16，v2 修订于 2026-04-24。官方项目页发布于 2026-04-16，并提供论文 PDF。未找到公开 GitHub 代码仓库、OpenReview 页面、会议接收状态、Oral/Spotlight/Poster 或 submission number。</p>
+  <div class="tablewrap"><table>
+    <tr><th>项目</th><th>信息</th></tr>
+    <tr><td>标题</td><td>pi0.7: a Steerable Generalist Robotic Foundation Model with Emergent Capabilities</td></tr>
+    <tr><td>作者 / 机构</td><td>Physical Intelligence 与 Bo Ai、Ali Amin、Raichelle Aniceto、Ashwin Balakrishna 等 88 位作者；机构署名为 Physical Intelligence。</td></tr>
+    <tr><td>arXiv</td><td>2604.15483；v1: 2026-04-16；v2: 2026-04-24；类别 cs.LG / cs.RO。</td></tr>
+    <tr><td>Project Page</td><td><code>pi.website/pi07</code>，标题为 “A Steerable Model with Emergent Capabilities”。</td></tr>
+    <tr><td>GitHub / Code</td><td>未找到公开代码链接。</td></tr>
+    <tr><td>OpenReview / Conference</td><td>未找到公开接收信息、OpenReview 页面或会议状态。</td></tr>
+  </table></div>
+</section>
+
+<section id="motivation">
+  <h2>背景动机</h2>
+  <p>机器人 foundation model 的目标和大语言模型类似：把多来源数据压进一个通用模型，让模型在新场景中组合已有能力。问题在于机器人数据比文本更难“混”：同一个任务可能有快慢不同的执行、成功和失败、不同机器人 morphology、不同控制空间，以及从人类视频或网页多模态数据中来的非机器人信号。</p>
+  <p>论文指出，天真合并这些数据会让 policy 平均不同策略与质量层级，结果往往是低质量的折中动作。pi0.7 的核心假设是：不是先把数据清洗成单一高质量分布，而是把“这段数据是如何执行的”也放进 prompt。这样训练时保留异质性，测试时再用元数据和子目标把模型 steer 到高速、高质量、无错误的模式。</p>
+  <div class="missing"><strong>未能抽取原图：</strong>Figure 2/3 的架构与 prompt 图可在 arXiv HTML 中查看，但当前本地 shell 无法解析外网 DNS，无法下载图像字节并转成 base64。为避免插入模糊图或冒充论文 Figure，本文不放论文原图，只在后文给出明确标注的非论文概念示意图。</div>
+</section>
+
+<section id="bottleneck">
+  <h2>核心瓶颈</h2>
+  <div class="grid2">
+    <div class="card"><b>输入与输出</b>输入是多视角相机历史、机器人 proprioception、任务/子任务语言、可选视觉子目标、episode 元数据与控制模式；输出是 50 步 continuous action chunk，实际只执行其中一部分后重新推理。</div>
+    <div class="card"><b>baseline 失败模式</b>只用短文本任务 prompt 的 VLA 很难区分数据质量、执行速度、策略选择和失败片段；在复杂语言引用、数据集偏置、跨机器人 morphology、长程新任务上容易失效。</div>
+  </div>
+  <div class="callout"><strong>问题本质：</strong>pi0.7 把“多样性带来的歧义”转化为“可条件化的上下文变量”。如果条件变量足够贴近行为差异，模型就能从更大、更杂的数据中学习，而不是被低质量数据拖垮。</div>
+</section>
+
+<section id="pipeline">
+  <h2>方法地图</h2>
+  <div class="figure">
+    <img alt="概念示意图，非论文原图：pi0.7 pipeline" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5ODAiIGhlaWdodD0iMzMwIiB2aWV3Qm94PSIwIDAgOTgwIDMzMCI+PHJlY3Qgd2lkdGg9Ijk4MCIgaGVpZ2h0PSIzMzAiIGZpbGw9IiNmYmZhZjciLz48c3R5bGU+dGV4dHtmb250LWZhbWlseTpBcmlhbCxzYW5zLXNlcmlmO2ZpbGw6IzIyMzEyYn0udHtmb250LXNpemU6MjRweDtmb250LXdlaWdodDo3MDB9LnN7Zm9udC1zaXplOjE1cHh9LmJveHtmaWxsOiNmZmZkZjg7c3Ryb2tlOiMyODVhNGY7c3Ryb2tlLXdpZHRoOjI7cng6MTB9LmFjY2VudHtmaWxsOiNlZWY0ZWE7c3Ryb2tlOiNhMTRmM2Q7c3Ryb2tlLXdpZHRoOjI7cng6MTB9LmxpbmV7c3Ryb2tlOiMyODVhNGY7c3Ryb2tlLXdpZHRoOjM7ZmlsbDpub25lO21hcmtlci1lbmQ6dXJsKCNhKX08L3N0eWxlPjxkZWZzPjxtYXJrZXIgaWQ9ImEiIG1hcmtlcldpZHRoPSIxMCIgbWFya2VySGVpZ2h0PSIxMCIgcmVmWD0iOCIgcmVmWT0iMyIgb3JpZW50PSJhdXRvIj48cGF0aCBkPSJNMCwwIEw5LDMgTDAsNiBaIiBmaWxsPSIjMjg1YTRmIi8+PC9tYXJrZXI+PC9kZWZzPjx0ZXh0IHg9IjMwIiB5PSI0MiIgY2xhc3M9InQiPkNvbmNlcHR1YWwgcGlwZWxpbmUsIG5vdCBhIHBhcGVyIGZpZ3VyZTwvdGV4dD48cmVjdCBjbGFzcz0iYm94IiB4PSI0MCIgeT0iODUiIHdpZHRoPSIxODAiIGhlaWdodD0iOTAiLz48dGV4dCB4PSI3MCIgeT0iMTIwIiBjbGFzcz0icyI+T2JzZXJ2YXRpb24gaGlzdG9yeTwvdGV4dD48dGV4dCB4PSI3MCIgeT0iMTQ2IiBjbGFzcz0icyI+bXVsdGktdmlldyBpbWFnZXMgKyBxPC90ZXh0PjxyZWN0IGNsYXNzPSJhY2NlbnQiIHg9IjI4MCIgeT0iNjUiIHdpZHRoPSIyMTAiIGhlaWdodD0iMTMwIi8+PHRleHQgeD0iMzEwIiB5PSIxMDQiIGNsYXNzPSJzIj5FeHBhbmRlZCBjb250ZXh0PC90ZXh0Pjx0ZXh0IHg9IjMxMCIgeT0iMTMyIiBjbGFzcz0icyI+dGFzayArIHN1YnRhc2s8L3RleHQ+PHRleHQgeD0iMzEwIiB5PSIxNTgiIGNsYXNzPSJzIj5tZXRhZGF0YSArIHN1YmdvYWxzPC90ZXh0PjxyZWN0IGNsYXNzPSJib3giIHg9IjU1MCIgeT0iNjUiIHdpZHRoPSIxODAiIGhlaWdodD0iMTMwIi8+PHRleHQgeD0iNTg1IiB5PSIxMDQiIGNsYXNzPSJzIj5WTE0gYmFja2JvbmU8L3RleHQ+PHRleHQgeD0iNTg1IiB5PSIxMzIiIGNsYXNzPSJzIj5HZW1tYTMgNEI8L3RleHQ+PHRleHQgeD0iNTg1IiB5PSIxNTgiIGNsYXNzPSJzIj5NRU0gZW5jb2RlcjwvdGV4dD48cmVjdCBjbGFzcz0iYm94IiB4PSI3OTAiIHk9Ijg1IiB3aWR0aD0iMTUwIiBoZWlnaHQ9IjkwIi8+PHRleHQgeD0iODE1IiB5PSIxMjIiIGNsYXNzPSJzIj5GbG93IGFjdGlvbjwvdGV4dD48dGV4dCB4PSI4MTUiIHk9IjE0OCIgY2xhc3M9InMiPmV4cGVydCA4NjBNPC90ZXh0PjxwYXRoIGNsYXNzPSJsaW5lIiBkPSJNMjIwIDEzMCBIMjgwIi8+PHBhdGggY2xhc3M9ImxpbmUiIGQ9Ik00OTAgMTMwIEg1NTAiLz48cGF0aCBjbGFzcz0ibGluZSIgZD0iTTczMCAxMzAgSDc5MCIvPjx0ZXh0IHg9IjM5MCIgeT0iMjYwIiBjbGFzcz0icyI+VHJhaW5pbmcgdXNlcyBjb21wb25lbnQgZHJvcG91dDsgcnVudGltZSBjYW4gc3RlZXIgd2l0aCBhbnkgc3Vic2V0IG9mIGNvbnRleHQuPC90ZXh0Pjwvc3ZnPg==">
+    <div class="caption">概念示意图，非论文原图。它只表达已从正文确认的数据流：多视角历史观测与 proprioception 进入 MEM/Gemma3 VLM backbone；prompt 额外包含子任务、元数据、控制模式和可选视觉子目标；860M action expert 用 flow matching 生成动作 chunk。</div>
+  </div>
+  <p>训练时，数据来自高质量示范、低质量示范、失败 episode、自治评估 rollout、开源机器人数据、egocentric human video、网页 VQA/图像属性/文本任务等。每条轨迹不仅监督动作，还带有描述执行方式的上下文。推理时，系统始终给出控制模式和元数据；子任务可由人类 coaching 或高层语言 policy 产生；视觉子目标由轻量 world model 异步生成并定期刷新。</p>
+</section>
+
+<section id="method">
+  <h2>核心方法精读</h2>
+  <h3>1. Diverse Context：让异质数据可学习</h3>
+  <p>最关键的设计是把上下文从 “Task: clean the kitchen” 扩成多字段 prompt。子任务 instruction 指出当前语义阶段；subgoal images 描述短期未来视觉状态；episode metadata 标注速度、质量和错误；control mode 告诉模型当前动作空间是 joint-level 还是 end-effector。训练时随机 dropout 每个组件，使模型测试时能接受不同组合。</p>
+  <div class="tablewrap"><table>
+    <tr><th>Prompt 组件</th><th>解决的问题</th><th>训练/推理机制</th><th>风险</th></tr>
+    <tr><td>Subtask instruction</td><td>长程任务缺少阶段性语义约束</td><td>来自人工标注、human coaching 或高层 language policy；可随时间变化</td><td>高层指令错误会把低层 VLA 带偏</td></tr>
+    <tr><td>Subgoal images</td><td>语言难表达抓取角度、物体布局、腕部视角等细节</td><td>训练用真实未来帧与 world model 生成图；推理用 BAGEL 系 world model 生成</td><td>生成图质量差时可能造成错误空间 grounding</td></tr>
+    <tr><td>Episode metadata</td><td>失败/慢速/低质量轨迹和高质量轨迹混在一起</td><td>速度离散到 500-step bin，质量 1-5 分，错误 segment 人工粗标；推理设高质量、无错误</td><td>元数据标注噪声会影响行为模式分离</td></tr>
+    <tr><td>Control mode</td><td>不同机器人和任务可能需要不同控制空间</td><td>训练同时包含 joint 和 end-effector action，用文本标识控制模式；该字段不做 dropout</td><td>控制器/IK 误差仍会进入实际执行</td></tr>
+  </table></div>
+
+  <h3>2. Flow-Based VLA：动作生成仍是连续 action expert</h3>
+  <p>论文沿用 flow/diffusion 风格的 VLA：VLM backbone 处理视觉、语言与上下文，轻量 action expert 读取 backbone activation 并预测连续动作 chunk。pi0.7 的 action expert 是 860M 参数 transformer，固定处理 50 个 action tokens，对应 50 步动作；token 之间双向注意力，并可 attend 到 VLM activation。</p>
+  <div class="formula">
+    <div class="eqtag">论文 Equation (1)，HTML 中公式符号缺失处按上下文整理</div>
+    <div class="math">log p(a | o, c) approx log-likelihood lower bound from flow matching</div>
+    <div class="latex">含义：给定 observation o 与 context c，action expert 学习动作 chunk a 的条件分布；flow matching 优化的是近似下界，不是闭式 log-likelihood。</div>
+  </div>
+  <p>这解释了为什么论文反复强调“steerable”而不是“planner”：动作空间仍由一个连续生成模型覆盖，prompt 的作用是改变条件分布，使模型在多种可行行为中选择符合速度、质量、子目标和控制模式的那一支。</p>
+
+  <h3>3. MEM + Block-Causal Mask：让历史、目标和文本各用合适注意力</h3>
+  <p>模型最多输入四路相机：front、两个 wrist、可选 rear；每路最多六帧历史，图像 resize 到 448x448。MEM 风格 vision encoder 对时空历史做压缩，使任意数量历史帧输出固定 token 数。观测 token 与 subgoal token 内部使用双向注意力，goal-image token 还能 attend observation；后续文本 token 使用 causal attention。proprioceptive state 通过线性投影成为 backbone token，不再离散成文本 token。</p>
+  <div class="callout"><strong>为什么有效：</strong>历史帧解决记忆类任务，subgoal token 解决短期目标 grounding，block-causal mask 避免把视觉/目标 token 和后续文本混成不合适的因果结构。</div>
+
+  <h3>4. World Model 生成视觉子目标</h3>
+  <p>subgoal images 不是静态人工图片，而是可由 world model 在推理时生成。该 world model 初始化自 BAGEL，一个 14B mixture-of-transformers 图像理解、编辑和生成模型；训练目标是根据当前多视角输入和子任务 instruction 生成短期未来图像。论文强调，web-scale 预训练带来的语义和物理概念能通过生成的视觉子目标转移给 VLA。</p>
+  <div class="formula">
+    <div class="eqtag">论文 Section V-B，world model objective 的理解式</div>
+    <div class="math">L_wm = L_flow(g_future ; observation, subtask, metadata)</div>
+    <div class="latex">g_future 表示未来 subgoal image；论文将其作为标准 flow matching loss，用高质量 subtask label 的 trajectory segment 训练。</div>
+  </div>
+
+  <h3>5. Runtime Prompting：异步高层策略、视觉目标与动作 chunk</h3>
+  <p>测试时默认 metadata 设置为任务相关 speed percentile、quality=5、mistake=false。子任务来自人类 coaching 或高层 language policy；视觉子目标在语义 intent 改变或计时到达时刷新；VLA 用最新可用上下文异步推理。所有实验使用 5 个 denoising steps 生成 50-step action chunk，并执行其中若干步后重新推理。</p>
+  <div class="tablewrap"><table>
+    <tr><th>设计选择</th><th>解决的问题</th><th>技术机制</th><th>实验证据</th><th>潜在局限</th></tr>
+    <tr><td>episode metadata</td><td>混合质量数据会使策略平均化</td><td>速度/质量/错误作为 prompt；训练 dropout；推理设高质量无错误</td><td>Figure 7 显示 no metadata 全面落后；Figure 18 显示带 metadata 可随更多混合质量数据提升</td><td>依赖元数据标注质量；人工粗标可能不够细</td></tr>
+    <tr><td>subgoal images</td><td>语言难描述空间细节与跨 embodiment 策略</td><td>world model 生成多视角短期未来图像</td><td>Figure 10/11/12/15 中 GC 版本提升复杂指令、逆偏置与跨 embodiment</td><td>world model 延迟高，生成错误会误导低层策略</td></tr>
+    <tr><td>autonomous eval data</td><td>昂贵示范不足以覆盖鲁棒行为</td><td>把 prior policy/RL rollout 和失败数据纳入训练，用 metadata 区分质量</td><td>Figure 7 中 no eval data 下降，吞吐差距尤其明显</td><td>若上下文不足以分离失败模式，可能学习坏行为</td></tr>
+    <tr><td>MEM history encoder</td><td>部分任务依赖过去观测</td><td>多相机历史帧压缩为固定 token，并和状态历史共同输入</td><td>Figure 8 显示无需微调即可接近或超过 memory specialist</td><td>历史帧和后视图 dropout 增强鲁棒性，但也可能丢掉关键上下文</td></tr>
+  </table></div>
+</section>
+
+<section id="experiments">
+  <h2>实验设置</h2>
+  <p>实验不是一个单一 benchmark，而是一组真实机器人评估：高灵巧长程任务、需要 memory 的任务、开放环境指令跟随、复杂引用指令、逆数据集偏置任务、跨 embodiment transfer、组合泛化新任务，以及数据质量/多样性消融。机器人包括 bimanual mobile manipulators、静态 BiPi bimanual、bimanual UR5e 和单臂 6 DoF 系统。</p>
+  <div class="callout"><strong>如何读指标：</strong>seen dexterous tasks 常看 success rate、normalized throughput、task progress；instruction following 看正确执行总指令比例；跨 embodiment 同时看 task progress 与 success。不同任务难度、时长和机器人平台不同，不能把所有百分比当作同一 benchmark 上的统一分数比较。</div>
+</section>
+
+<section id="results">
+  <h2>主要结果</h2>
+  <h3>结果 1：一个通用模型能否接近专门 policy？</h3>
+  <p>Figure 6 的结论是：同一个 pi0.7 在 espresso、box building、laundry folding、peanut butter sandwich、shirt inside-out、drive through door、cut zucchini、peel fruits/vegetables、take out trash 等任务上，无需任务级 post-training 就接近 RL/SFT specialists；在 diverse laundry folding 和 box building 的 throughput 上甚至更高。Figure 7 进一步说明，metadata 和 autonomous evaluation data 都不是装饰，去掉任何一项都会掉性能，吞吐差距尤其明显。</p>
+  <div class="tablewrap"><table>
+    <tr><th>结果组</th><th>对应 Figure</th><th>实验想证明什么</th><th>论文报告的主结论</th></tr>
+    <tr><td>Out-of-box dexterity</td><td>Figure 6</td><td>通用模型是否能匹配任务专门 policy</td><td>pi0.7 在多种灵巧任务上接近 RL/SFT specialist，并在部分任务吞吐更高</td></tr>
+    <tr><td>Prompt / eval data ablation</td><td>Figure 7</td><td>metadata 和自治 rollout 是否必要</td><td>full pi0.7 全面超过 no metadata 与 no eval data</td></tr>
+    <tr><td>Memory tasks</td><td>Figure 8</td><td>历史观测是否带来记忆能力</td><td>无需微调即可达到或超过 memory specialist</td></tr>
+  </table></div>
+
+  <h3>结果 2：语言跟随是否真的更强？</h3>
+  <p>Figure 9 在 4 个 unseen kitchens 和 2 个 unseen bedrooms 中测试 14 个 instruction following scenarios，每次包含 3-6 步开放指令；pi0.7 明显超过 pi0 与 pi0.5。Figure 10 把指令分成普通重排和复杂引用，后者包括“拿起我会用来喝汤的物体”之类语义引用；pi0.7 在复杂指令上优势更明显，使用 generated subgoal images 的 GC 版本进一步提升。Figure 11 的逆偏置任务说明模型不只是复现数据集常规动作，而能在 prompt 要求和数据偏置相反时仍跟随语言。</p>
+
+  <h3>结果 3：跨机器人 transfer 与组合泛化</h3>
+  <p>Figure 12/13 关注 cross-embodiment。更简单的重排任务中多个模型都能 transfer；当 morphology gap 变大，尤其是小型静态 bimanual 到 UR5e 或单臂 UR5e 的迁移，pi0.7 明显强于 prior models。论文还报告 UR5e shirt folding 中，人类 expert teleoperators 零样本 task progress 为 90.9%、success 80.6%，pi0.7 为 85.6%、success 80%，说明其零样本跨 embodiment 表现接近专家首次尝试。</p>
+  <p>组合泛化部分，Figure 15/16 展示 air fryer、toaster、bagel 等未收集 action-level data 的长程厨房任务。直接 zero-shot prompt 不一定完成，但 language coaching 能显著提升；用 coaching data 训练高层 language policy 后，可在无额外 teleoperation 的情况下接近 coaching episode 的表现。</p>
+</section>
+
+<section id="ablation">
+  <h2>消融分析</h2>
+  <h3>Q1：元数据真的能让混合质量数据变成资产吗？</h3>
+  <p>Figure 18 左侧把 “Laundry (T-Shirts and Shorts)” 数据按质量和速度切成 top 30%、top 50%、top 80%、all 四档。无 metadata 的模型随着更多低质量数据进入可能变差；带 metadata 的 pi0.7 则随数据规模继续提升。这是全文最关键的因果证据之一：prompt 不是为了推理时花哨控制，而是在训练时把数据分布的多模态结构显式化。</p>
+  <h3>Q2：任务多样性本身是否重要？</h3>
+  <p>Figure 18 右侧比较移除“最高任务多样性 20%”与随机移除 20%。如果只是数据量，两个 ablation 应该接近；论文报告 full model 和 random 20% removal 明显优于移除最高多样性 20%，说明任务多样性对 unseen short-horizon generalization 有独立贡献。</p>
+  <h3>Q3：视觉子目标在什么地方最有价值？</h3>
+  <p>Figure 10/11/12/15 的共同模式是：GC 不一定在所有简单任务上必要，但在复杂引用、逆数据集偏置、跨 embodiment dexterous transfer 和长程 coaching 任务中尤其重要。直觉是，语言给出语义意图，world model 把语义意图投射成“下一小段视觉上应该是什么样”，低层 VLA 再把它转成动作。</p>
+</section>
+
+<section id="visual">
+  <h2>可视化与失败模式</h2>
+  <p>论文的可视化主要通过机器人照片、执行序列和实验柱状图呈现。Figure 13 最有解释力：在 source robot 上，人类示范用一只手撑开袋子或以倾斜末端执行器固定布料；在 UR5e target robot 上，pi0.7 采用更适合长臂/不同 gripper 的单臂 pick-and-place 或垂直 grasp。这个现象支持“跨 embodiment 不是复制轨迹，而是重组策略”的主张。</p>
+  <p>失败模式则集中在 unseen 长程任务：论文明确说，直接要求机器人 zero-shot 完成 air fryer 这类任务时会有合理尝试但不能完整完成；需要 step-by-step language coaching 或高层 policy 才能稳定。讨论章节也承认，seen tasks 常超过 90% success，而 unseen tasks 或 unseen task-robot 组合常在 60-80% 区间。</p>
+</section>
+
+<section id="limits">
+  <h2>优点、不足与隐含假设</h2>
+  <div class="grid2">
+    <div class="card"><b>优点</b>方法抓住了机器人数据的真实问题：数据大而杂、质量不一、任务多样但标注不完全。用 prompt 分解行为差异比强行过滤数据更适合扩展。</div>
+    <div class="card"><b>不足</b>论文是大规模真实系统论文，很多数据细节、训练算力、标注流程和精确数值难以复现；结果多为自建任务和自家 robot fleet，外部可比性有限。</div>
+  </div>
+  <p>隐含假设包括：metadata 能充分刻画质量/策略差异；world model 生成的 subgoal 与真实可执行未来一致；高层 policy 或 human coaching 不会持续给错子任务；训练集中虽无目标任务 action-level data，但可能存在可重组的近邻技能；真实部署中 asynchronous world model、RTC、PD controller 和不同机器人动力学不会产生不可控误差。</p>
+</section>
+
+<section id="insights">
+  <h2>后续研究与工程启发</h2>
+  <p>研究上，pi0.7 给出的方向是“把数据异质性显式 prompt 化”。后续可以更系统地研究 metadata 的粒度、自动标注质量、failure segment 的利用方式，以及 world model subgoal 的可信度校准。另一个开放问题是如何定义 truly unseen：大规模数据中技能可能以别名或子行为形式出现，组合泛化和检索式重组之间的边界很难划清。</p>
+  <p>工程上，复现优先级应该是：先做可控 metadata schema，再做 prompt component dropout，然后加入 history encoder 与 action expert；视觉子目标很强但成本高，论文附录给出的 worst-case VLA inference 为 127ms，world model 25 denoising steps 约 1.25s 且用 4xH100 tensor parallel，因此更适合异步规划提示，而不是每个控制周期同步依赖。</p>
+</section>
+
+<section id="summary">
+  <h2>总结</h2>
+  <p>pi0.7 最核心的贡献，是证明大规模机器人 VLA 的泛化瓶颈不只是模型大小，而是训练上下文是否足以解释异质数据。最有说服力的证据来自三组结果：Figure 6/7 的通用模型接近 specialist 且 metadata/eval data 必要；Figure 12/22 的跨 embodiment dexterous transfer 接近专家首次尝试；Figure 18 的元数据让更多混合质量数据继续带来收益。最大局限是复现门槛高、外部 benchmark 少，且真正“未见任务”的界定仍然模糊。</p>
+</section>
+
+<section id="appendix">
+  <h2>附录：PDF 解析与图表抽取自检</h2>
+  <details><summary>展开自检记录</summary>
+    <ul>
+      <li>PDF 获取：当前 macOS 工作环境中 shell 网络受限，<code>curl https://arxiv.org/pdf/2604.15483</code> DNS 解析失败；未能在本地下载 PDF 二进制。</li>
+      <li>正文读取：已通过 arXiv 官方 HTML 页面读取标题、作者、摘要、章节结构、Algorithm 1、Figure 2-22 图注和实验讨论；不是只基于摘要生成。</li>
+      <li>Figure / Table / Equation 定位：已定位 Figure 2、3、4-18、20-22 的图注；论文主体未见传统数值 Table，实验主要以 Figure 柱状图/可视化呈现；已定位 Equation (1) 与 world model flow objective 的文字说明，但 arXiv HTML 中部分公式符号缺失。</li>
+      <li>原图抽取：未能把 PDF/HTML 原图下载为本地字节并转成 base64，因此没有插入任何论文原图；页面中所有涉及原图处均写明“未能抽取原图”。</li>
+      <li>图像内嵌：仅插入一张明确标注“概念示意图 / 非论文原图”的简单 SVG，并以 <code>data:image/svg+xml;base64</code> 内嵌；未使用外部图片 URL、iframe、object、embed 或懒加载。</li>
+      <li>表格复刻：根据正文和图注复刻了资源表、prompt 组件表、设计选择小结表和实验结论表；未伪造 Figure 柱状图中的精确数值。</li>
+      <li>公式：为满足完全自包含和离线打开，未加载外部 MathJax CDN；公式以静态 LaTeX/文字形式展示，并检查无裸露 HTML 比较符、无横向溢出。</li>
+      <li>资源检索：已检索 arXiv、arXiv HTML、Physical Intelligence 项目页；未找到 GitHub、OpenReview、Conference/Workshop 接收状态、submission number。</li>
+      <li>工具链记录：当前电脑环境为 macOS；运行 agent 组合按用户要求如实记录为 Codex + GPT-5.5；实际执行使用 zsh、web 检索/读取、base64 编码和 apply_patch 写入单个 HTML。</li>
+      <li>项目约束：只在 <code>papers/</code> 下新增一个 HTML 文件；未在 <code>papers/</code> 下生成非 HTML 文件；未修改项目代码。</li>
+    </ul>
+  </details>
+  <p class="note">主要来源：arXiv 页面与官方项目页。页面正文、样式与概念图均可离线打开。</p>
+</section>
+<p class="footer">Self-contained paper reading page. Generated for Paper Read Room.</p>
+</main>
+</div>
+</body>
+</html>
