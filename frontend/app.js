@@ -11,9 +11,17 @@ const state = {
   activeBatch: null,
   batchTimer: null,
   researchTimer: null,
+  theme: null,
 };
 
 const FOLDER_COLORS = ["#2563eb", "#4f46e5", "#7c3aed", "#db2777", "#dc2626", "#ea580c", "#d97706", "#059669", "#0891b2", "#475569"];
+const THEME_PRESETS = {
+  default: { name: "云白蓝", hint: "当前管理页风格", primary: "#2563eb", bg: "#fbfcff", panel: "#ffffff", text: "#172033", border: "#dfe6f1", mode: "glow" },
+  ink: { name: "清墨绿", hint: "低饱和阅读", primary: "#0f766e", bg: "#f8fafc", panel: "#ffffff", text: "#111827", border: "#d7e2ea", mode: "solid" },
+  githubLight: { name: "GitHub Light", hint: "清爽代码阅读", primary: "#0969da", bg: "#f6f8fa", panel: "#ffffff", text: "#1f2328", border: "#d0d7de", mode: "solid" },
+  githubDark: { name: "GitHub Dark", hint: "深色护眼阅读", primary: "#2f81f7", bg: "#0d1117", panel: "#161b22", text: "#e6edf3", border: "#30363d", mode: "solid" },
+  night: { name: "深夜蓝", hint: "暗色长读", primary: "#60a5fa", bg: "#0f172a", panel: "#111827", text: "#e5edf8", border: "#28364d", mode: "solid" },
+};
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -48,6 +56,7 @@ function debounce(fn, ms = 300) {
 }
 
 async function loadAll() {
+  initTheme();
   await Promise.all([loadStats(), loadFilters(), loadPapers()]);
   loadRepoLink();
   restoreResearchPolling();
@@ -216,7 +225,7 @@ function renderCard(paper) {
     <div class="card-footer">
       <div class="links">${link(paper.pdf_url, "PDF")}${link(paper.arxiv_url, "arXiv")}${link(paper.github_url, "GitHub")}</div>
       <div class="ops">
-        ${paper.summary_html_exists ? `<a href="/read/${paper.slug}" target="_blank" title="打开精读页">📄</a><a href="/api/papers/${paper.id}/export-html" title="导出">⬇</a>` : ""}
+        ${paper.summary_html_exists ? `<a href="${readUrl(paper.slug, false)}" target="_blank" title="打开精读页">📄</a><a href="/api/papers/${paper.id}/export-html" title="导出">⬇</a>` : ""}
         <button data-detail title="查看详情">›</button>
         <button data-edit title="编辑">✎</button>
       </div>
@@ -280,7 +289,8 @@ async function showDetail(id) {
       <button class="toolbar-btn" id="backListBtn">← 返回列表</button>
       <div class="ops">
         <button id="detailEditBtn">编辑</button>
-        ${paper.summary_html_exists ? `<a href="/api/papers/${paper.id}/export-html">导出HTML</a><a href="/read/${paper.slug}" target="_blank">打开精读页</a>` : ""}
+        <button id="detailReresearchBtn">重新研究并替换</button>
+        ${paper.summary_html_exists ? `<a href="/api/papers/${paper.id}/export-html">导出HTML</a><a href="${readUrl(paper.slug, false)}" target="_blank">打开精读页</a>` : ""}
       </div>
     </div>
     <h2>${escapeHtml(paper.title)}</h2>
@@ -288,12 +298,13 @@ async function showDetail(id) {
     <div class="callout">${escapeHtml(paper.one_line_summary || "暂无一句话总结。")}</div>
     <div class="meta-grid">${meta}</div>
     <div class="chips"><span class="chip status-${paper.status}">${statusLabel(paper.status)}</span>${(paper.tags || []).map(t => `<span class="chip">${escapeHtml(t)}</span>`).join("")}</div>
-    ${paper.summary_html_exists ? `<iframe class="summary-frame" src="/read/${paper.slug}?embed=1"></iframe>` : `<div class="empty-state"><h2>暂无精读 HTML</h2><p>可以上传 HTML 或启动 AI 研究生成。</p></div>`}`;
+    ${paper.summary_html_exists ? `<iframe class="summary-frame" src="${readUrl(paper.slug, true)}"></iframe>` : `<div class="empty-state"><h2>暂无精读 HTML</h2><p>可以上传 HTML 或启动 AI 研究生成。</p></div>`}`;
   $("#backListBtn").onclick = () => {
     detail.classList.add("hidden");
     $("#listView").classList.remove("hidden");
   };
   $("#detailEditBtn").onclick = () => openPaperModal(paper);
+  $("#detailReresearchBtn").onclick = () => startReplaceResearch(paper);
 }
 
 function openPaperModal(paper = null) {
@@ -409,6 +420,50 @@ function openMoveModal() {
   });
 }
 
+function openThemeModal() {
+  const theme = state.theme || themeFromPreset("default");
+  openModal(`
+    <div class="modal-head"><h2>阅读主题</h2><button class="icon-btn" data-close>×</button></div>
+    <div class="modal-body">
+      <p class="callout compact">选择一个预设，统一管理页和论文阅读页的外观。</p>
+      <div class="field full">
+        <label>预设</label>
+        <div class="theme-grid">
+          ${Object.entries(THEME_PRESETS).map(([key, item]) => themePresetCard(key, item, theme.preset === key)).join("")}
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" id="resetThemeBtn">恢复默认</button>
+        <button type="button" data-close>关闭</button>
+      </div>
+    </div>`);
+  $$(".theme-card").forEach(card => card.onclick = () => {
+    const next = themeFromPreset(card.dataset.theme);
+    saveTheme(next);
+    closeModal();
+    refreshDetailFrame();
+    toast("主题已应用", "success");
+  });
+  $("#resetThemeBtn").onclick = () => {
+    saveTheme(themeFromPreset("default"));
+    closeModal();
+    refreshDetailFrame();
+  };
+}
+
+async function startReplaceResearch(paper) {
+  if (!confirm(`确认将《${paper.title}》加入批量重研队列？完成后会替换当前精读 HTML，最终只保留一份报告。`)) return;
+  try {
+    const batch = await api(`/api/papers/${paper.id}/research/batch-replace`, { method: "POST" });
+    state.activeBatch = batch.active ? batch : null;
+    updateResearchBadge(batch);
+    openBatchModal();
+    toast("已加入批量重研队列，完成后替换当前版本", "success");
+  } catch (err) {
+    toast(err.message, "error");
+  }
+}
+
 function openResearchModal() {
   const active = state.activeResearch;
   openModal(`
@@ -461,7 +516,7 @@ function openBatchModal() {
   openModal(`
     <div class="modal-head"><h2>批量 AI 研究</h2><button class="icon-btn" data-close>×</button></div>
     <div class="modal-body">
-      <p class="callout">添加多篇论文到队列，系统按顺序调用 Codex + GPT-5.5。完成后自动打 AI研究 标签并移入 AI研究论文 文件夹。</p>
+      <p class="callout">队列按顺序调用 Codex + GPT-5.5。新研究会自动归档；已有论文点“重研”会排队执行并覆盖原 HTML，只保留一份报告。</p>
       <form id="batchAddForm" class="form-grid">
         ${field("paper_name", "论文名称*", "", "text", true)}
         ${field("pdf_url", "PDF URL", "", "url")}
@@ -492,7 +547,10 @@ async function pollBatch() {
   if (progress) progress.innerHTML = batchProgress(batch);
   if (panel) {
     panel.innerHTML = batch.items.length ? batch.items.map(item => queueRow(item)).join("") : `<div class="empty-state"><p>队列为空</p></div>`;
-    $$(".queue-row button", panel).forEach(btn => btn.onclick = () => batchAction(btn.dataset.action, btn.dataset.id));
+    $$(".queue-row button", panel).forEach(btn => btn.onclick = () => {
+      if (btn.dataset.action === "replace-research") return startReplaceResearchFromQueue(btn);
+      return batchAction(btn.dataset.action, btn.dataset.id);
+    });
   }
   clearInterval(state.batchTimer);
   if (batch.active) state.batchTimer = setInterval(() => pollBatch().catch(() => {}), 4000);
@@ -532,8 +590,25 @@ async function openActiveResearchPanel() {
 
 async function batchAction(action, id) {
   if (action === "open") return;
+  if (action === "replace-research") return;
   await api(`/api/research/batch/default/items/${id}/${action}`, { method: "POST", body: action === "reorder" ? { direction: "up" } : undefined });
   pollBatch();
+}
+
+async function startReplaceResearchFromQueue(btn) {
+  const paperId = Number(btn.dataset.paperId);
+  if (!paperId) return toast("未找到对应论文，无法重新研究", "error");
+  const title = btn.dataset.title || "这篇论文";
+  if (!confirm(`确认将《${title}》加入批量重研队列？完成后会替换当前精读 HTML，只保留一份报告。`)) return;
+  try {
+    const batch = await api(`/api/papers/${paperId}/research/batch-replace`, { method: "POST" });
+    state.activeBatch = batch.active ? batch : null;
+    updateResearchBadge(batch);
+    pollBatch();
+    toast("已加入批量重研队列，完成后替换原 HTML", "success");
+  } catch (err) {
+    toast(err.message, "error");
+  }
 }
 
 async function uploadFiles(files) {
@@ -587,6 +662,8 @@ function bindEvents() {
   $("#aiBtn").onclick = $("#aiTopBtn").onclick = () => openResearchModal();
   $("#researchBadge").onclick = () => openActiveResearchPanel();
   $("#batchBtn").onclick = $("#batchTopBtn").onclick = () => openBatchModal();
+  $("#themeBtn").onclick = () => openThemeModal();
+  $("#themeTopBtn").onclick = () => openThemeModal();
   $("#syncBtn").onclick = async () => { await api("/api/sync", { method: "POST" }); await refreshAll(); toast("文件系统已同步", "success"); };
   $("#scanBtn").onclick = async () => { await api("/api/scan-orphan-html", { method: "POST" }); await refreshAll(); toast("孤立 HTML 已扫描", "success"); };
   $("#newFolderBtn").onclick = () => openFolderModal();
@@ -641,6 +718,75 @@ function bindSidebarResize() {
 }
 function setSidebarWidth(width) {
   document.documentElement.style.setProperty("--sidebar-w", `${Math.round(width)}px`);
+}
+
+function initTheme() {
+  const saved = JSON.parse(localStorage.getItem("paperTheme") || "null");
+  applyTheme(saved || themeFromPreset("default"));
+}
+
+function themeFromPreset(key) {
+  const preset = THEME_PRESETS[key] || THEME_PRESETS.default;
+  return { ...preset, preset: key in THEME_PRESETS ? key : "default" };
+}
+
+function saveTheme(theme) {
+  applyTheme(theme);
+  localStorage.setItem("paperTheme", JSON.stringify(state.theme));
+}
+
+function applyTheme(theme) {
+  const next = { ...themeFromPreset("default"), ...(theme || {}) };
+  state.theme = next;
+  const root = document.documentElement;
+  root.dataset.theme = next.preset && next.preset !== "custom" ? next.preset : "";
+  document.body.classList.toggle("theme-solid", next.mode === "solid" || next.preset === "custom");
+  [
+    ["--primary", next.primary],
+    ["--primary-hover", next.primary],
+    ["--primary-bg", mixHex(next.primary, next.bg, 0.12)],
+    ["--bg", next.bg],
+    ["--panel", next.panel],
+    ["--bg-alt", mixHex(next.border, next.bg, 0.34)],
+    ["--bg-hover", mixHex(next.primary, next.bg, 0.1)],
+    ["--text", next.text],
+    ["--text-secondary", mixHex(next.text, next.bg, 0.72)],
+    ["--text-muted", mixHex(next.text, next.bg, 0.48)],
+    ["--border", next.border],
+    ["--info", next.primary],
+    ["--info-bg", mixHex(next.primary, next.bg, 0.12)],
+  ].forEach(([name, value]) => root.style.setProperty(name, value));
+}
+
+function refreshDetailFrame() {
+  const frame = $(".summary-frame");
+  if (frame && state.currentPaper?.slug) frame.src = readUrl(state.currentPaper.slug, true);
+}
+
+function readUrl(slug, embed = false) {
+  const url = new URL(`/read/${slug}`, window.location.origin);
+  if (embed) url.searchParams.set("embed", "1");
+  const theme = state.theme || themeFromPreset("default");
+  ["primary", "bg", "panel", "text", "border"].forEach(key => url.searchParams.set(key, theme[key]));
+  return `${url.pathname}${url.search}`;
+}
+
+function themePresetCard(key, theme, active) {
+  return `<button type="button" class="theme-card ${active ? "active" : ""}" data-theme="${key}">
+    <span class="theme-preview">
+      <i style="background:${escapeAttr(theme.bg)}"></i>
+      <i style="background:${escapeAttr(theme.primary)}"></i>
+    </span>
+    <b>${escapeHtml(theme.name)}</b>
+    <span>${escapeHtml(theme.hint)}</span>
+  </button>`;
+}
+
+function mixHex(a, b, amount) {
+  const ar = parseInt(a.slice(1, 3), 16), ag = parseInt(a.slice(3, 5), 16), ab = parseInt(a.slice(5, 7), 16);
+  const br = parseInt(b.slice(1, 3), 16), bg = parseInt(b.slice(3, 5), 16), bb = parseInt(b.slice(5, 7), 16);
+  const vals = [ar * amount + br * (1 - amount), ag * amount + bg * (1 - amount), ab * amount + bb * (1 - amount)].map(v => Math.round(v).toString(16).padStart(2, "0"));
+  return `#${vals.join("")}`;
 }
 
 function restoreResearchPolling() {
@@ -707,9 +853,11 @@ function logIcon(type) {
 }
 function queueRow(item) {
   const icon = { queued: "⏳", pending: "◌", researching: "◐", generating: "◇", completed: "✓", failed: "!", cancelled: "×" }[item.status] || "•";
-  const result = item.result?.slug ? `<a href="/read/${item.result.slug}" target="_blank">打开</a>` : "";
+  const result = item.result?.slug ? `<a href="${readUrl(item.result.slug, false)}" target="_blank">打开</a>` : "";
+  const paperId = item.result?.paper_id || item.result?.id || "";
+  const rerun = paperId ? `<button data-action="replace-research" data-id="${escapeAttr(item.id)}" data-paper-id="${escapeAttr(paperId)}" data-title="${escapeAttr(item.paper_name)}">重研</button>` : "";
   const actions = item.status === "completed"
-    ? `${result}<button data-action="remove" data-id="${item.id}">移除</button>`
+    ? `${result}${rerun}<button data-action="remove" data-id="${item.id}">移除</button>`
     : item.status === "failed" || item.status === "cancelled"
       ? `<button data-action="retry" data-id="${item.id}">重试</button><button data-action="remove" data-id="${item.id}">移除</button>`
       : item.status === "queued"

@@ -16,7 +16,7 @@ def _stamp() -> str:
     return datetime.now().strftime("%H:%M:%S")
 
 
-def create_task(paper_name: str, pdf_url: str | None = None) -> dict[str, Any]:
+def create_task(paper_name: str, pdf_url: str | None = None, target_slug: str | None = None, replace_paper_id: int | None = None) -> dict[str, Any]:
     active = active_task()
     if active:
         raise RuntimeError("同一时间只允许一个活跃研究任务")
@@ -25,6 +25,8 @@ def create_task(paper_name: str, pdf_url: str | None = None) -> dict[str, Any]:
         "id": task_id,
         "paper_name": paper_name,
         "pdf_url": pdf_url,
+        "target_slug": target_slug,
+        "replace_paper_id": replace_paper_id,
         "status": "pending",
         "message": "任务已创建",
         "error": None,
@@ -100,13 +102,26 @@ def start_batch(items: list[dict[str, Any]]) -> dict[str, Any]:
         for offset, item in enumerate(items, start=1):
             task_id = uuid.uuid4().hex[:8]
             stamp = db.now_iso()
-            logs = [{"time": _stamp(), "type": "system", "text": "已加入批量研究队列"}]
+            is_replace = bool(item.get("target_slug") or item.get("replace_paper_id"))
+            logs = [{"time": _stamp(), "type": "system", "text": "已加入批量重研队列" if is_replace else "已加入批量研究队列"}]
             con.execute(
                 """
-                INSERT INTO batch_queue(id,paper_name,pdf_url,status,sort_order,message,logs,created_at,updated_at)
-                VALUES (?,?,?,?,?,?,?,?,?)
+                INSERT INTO batch_queue(id,paper_name,pdf_url,target_slug,replace_paper_id,status,sort_order,message,logs,created_at,updated_at)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?)
                 """,
-                (task_id, item["paper_name"], item.get("pdf_url"), "queued", max_order + offset, "排队中", json.dumps(logs, ensure_ascii=False), stamp, stamp),
+                (
+                    task_id,
+                    item["paper_name"],
+                    item.get("pdf_url"),
+                    item.get("target_slug"),
+                    item.get("replace_paper_id"),
+                    "queued",
+                    max_order + offset,
+                    "等待批量重研" if is_replace else "排队中",
+                    json.dumps(logs, ensure_ascii=False),
+                    stamp,
+                    stamp,
+                ),
             )
             created.append(task_id)
     return get_batch()
@@ -170,6 +185,17 @@ def next_queued_item() -> dict[str, Any] | None:
             return None
         row = con.execute("SELECT * FROM batch_queue WHERE status='queued' AND cancel_requested=0 ORDER BY sort_order ASC, created_at ASC LIMIT 1").fetchone()
         return dict(row) if row else None
+
+
+def queue_item(task_id: str) -> dict[str, Any] | None:
+    with db.connect() as con:
+        row = con.execute("SELECT * FROM batch_queue WHERE id=?", (task_id,)).fetchone()
+    if not row:
+        return None
+    item = dict(row)
+    item["logs"] = json.loads(item.get("logs") or "[]")
+    item["result"] = json.loads(item["result"]) if item.get("result") else None
+    return item
 
 
 def cancel_batch() -> dict[str, Any]:

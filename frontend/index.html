@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Paper Reading Manager</title>
-    <link rel="stylesheet" href="/static/style.css?v=20260619-polish1" />
+    <link rel="stylesheet" href="/static/style.css?v=20260621-batch-rerun" />
   </head>
   <body>
     <div class="mobile-scrim" id="mobileScrim"></div>
@@ -41,6 +41,7 @@
           <button class="action" id="uploadBtn">上传精读 HTML</button>
           <button class="action primary" id="aiBtn">AI 研究论文</button>
           <button class="action deep" id="batchBtn">批量 AI 研究</button>
+          <button class="action" id="themeBtn">阅读主题</button>
           <button class="action" id="scanBtn">自动归档精读</button>
           <button class="action" id="syncBtn">同步文件系统</button>
           <a class="repo-link" id="repoLink" href="#" target="_blank" rel="noreferrer">仓库地址加载中</a>
@@ -50,21 +51,28 @@
 
       <main class="main-content">
         <header class="topbar">
-          <button class="menu-btn" id="menuBtn">☰</button>
-          <div class="searchbox"><span>⌕</span><input id="searchInput" placeholder="搜索标题、作者、摘要、arXiv ID" /></div>
-          <select id="yearFilter"><option value="">全部年份</option></select>
-          <select id="sortSelect">
-            <option value="date_added:desc">最近添加</option>
-            <option value="date_updated:desc">最近更新</option>
-            <option value="title:asc">标题 A-Z</option>
-            <option value="year:desc">年份新→旧</option>
-            <option value="rating:desc">评分高→低</option>
-          </select>
-          <button class="toolbar-btn" id="uploadTopBtn">上传</button>
-          <button class="toolbar-btn" id="addPaperBtn">添加论文</button>
-          <button class="toolbar-btn accent" id="aiTopBtn">AI 研究</button>
-          <button class="toolbar-btn deep" id="batchTopBtn">批量AI研究</button>
-          <button class="research-pill hidden" id="researchBadge">研究中</button>
+          <div class="topbar-left">
+            <button class="menu-btn" id="menuBtn">☰</button>
+            <div class="searchbox"><span>⌕</span><input id="searchInput" placeholder="搜索标题、作者、摘要、arXiv ID" /></div>
+            <select id="yearFilter"><option value="">全部年份</option></select>
+            <select id="sortSelect">
+              <option value="date_added:desc">最近添加</option>
+              <option value="date_updated:desc">最近更新</option>
+              <option value="title:asc">标题 A-Z</option>
+              <option value="year:desc">年份新→旧</option>
+              <option value="rating:desc">评分高→低</option>
+            </select>
+          </div>
+          <div class="topbar-actions">
+            <button class="toolbar-btn" id="uploadTopBtn">上传</button>
+            <button class="toolbar-btn" id="addPaperBtn">添加论文</button>
+            <button class="toolbar-btn accent" id="aiTopBtn">AI 研究</button>
+            <button class="toolbar-btn deep" id="batchTopBtn">批量AI研究</button>
+            <button class="toolbar-icon theme-toggle" id="themeTopBtn" title="阅读主题" aria-label="阅读主题">
+              <span class="theme-icon" aria-hidden="true"><i></i><i></i><i></i></span>
+            </button>
+            <button class="research-pill hidden" id="researchBadge">研究中</button>
+          </div>
         </header>
 
         <section class="content-area">
@@ -103,6 +111,6 @@
     <input type="file" id="fileInput" accept=".html,.htm" multiple hidden />
     <div id="modalRoot"></div>
     <div class="toast-stack" id="toastStack"></div>
-    <script src="/static/app.js?v=20260619-polish1"></script>
+    <script src="/static/app.js?v=20260621-reresearch-math"></script>
   </body>
 </html>

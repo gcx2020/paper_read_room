@@ -264,9 +264,40 @@ def api_repo():
 @app.post("/api/research/start")
 def api_research_start(payload: ResearchRequest):
     try:
-        return research.create_task(payload.paper_name, payload.pdf_url)
+        return research.create_task(payload.paper_name, payload.pdf_url, payload.target_slug, payload.replace_paper_id)
     except RuntimeError as exc:
         raise HTTPException(409, str(exc))
+
+
+@app.post("/api/papers/{paper_id}/research/replace")
+def api_research_replace_paper(paper_id: int):
+    paper = db.get_paper(paper_id)
+    if not paper:
+        raise HTTPException(404, "Paper not found")
+    try:
+        return research.create_task(
+            paper["title"],
+            paper.get("pdf_url"),
+            target_slug=paper["slug"],
+            replace_paper_id=paper["id"],
+        )
+    except RuntimeError as exc:
+        raise HTTPException(409, str(exc))
+
+
+@app.post("/api/papers/{paper_id}/research/batch-replace")
+def api_batch_replace_paper(paper_id: int):
+    paper = db.get_paper(paper_id)
+    if not paper:
+        raise HTTPException(404, "Paper not found")
+    return research.start_batch([
+        {
+            "paper_name": paper["title"],
+            "pdf_url": paper.get("pdf_url"),
+            "target_slug": paper["slug"],
+            "replace_paper_id": paper["id"],
+        }
+    ])
 
 
 @app.get("/api/research/pending")
@@ -368,13 +399,22 @@ def api_batch_retry(batch_id: str, task_id: str):
 
 
 @app.get("/read/{slug}")
-def read_summary(slug: str, embed: int = 0):
+def read_summary(
+    slug: str,
+    embed: int = 0,
+    primary: str | None = None,
+    bg: str | None = None,
+    panel: str | None = None,
+    text: str | None = None,
+    border: str | None = None,
+):
     path = PAPERS_DIR / f"{slug}.html"
     if not path.exists():
         raise HTTPException(404, "Summary not found")
     html = path.read_text(encoding="utf-8", errors="replace")
-    if embed:
-        html = _embed_html(html)
+    theme = {"primary": primary, "bg": bg, "panel": panel, "text": text, "border": border}
+    if embed or any(theme.values()):
+        html = _embed_html(html, {"primary": primary, "bg": bg, "panel": panel, "text": text, "border": border})
     html = _inject_back_button(html, embed=bool(embed))
     return HTMLResponse(html)
 
@@ -394,17 +434,147 @@ if FRONTEND_DIR.exists():
 def _inject_back_button(html: str, embed: bool = False) -> str:
     if "data-paper-manager-back" in html:
         return html
-    css = "position:fixed;top:14px;left:14px;z-index:99999;padding:9px 13px;border-radius:999px;background:#111827;color:#fff;text-decoration:none;font:14px -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;box-shadow:0 10px 30px rgba(15,23,42,.18)"
+    css = "position:fixed;top:14px;left:14px;z-index:99999;padding:8px 13px;border-radius:999px;background:var(--pm-primary-bg,#eff6ff);color:var(--pm-primary,#2563eb);border:1px solid var(--pm-border,#dfe6f1);text-decoration:none;font:600 14px -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;box-shadow:0 8px 22px rgba(37,99,235,.10);backdrop-filter:blur(10px)"
     label = "返回主界面"
     button = f'<a data-paper-manager-back href="/" style="{css}">← {label}</a>'
     return re.sub(r"(<body[^>]*>)", r"\1" + button, html, count=1, flags=re.I) if re.search(r"<body[^>]*>", html, re.I) else button + html
 
 
-def _embed_html(html: str) -> str:
+def _embed_html(html: str, theme: dict[str, str | None] | None = None) -> str:
     html = re.sub(r"<nav[^>]+class=[\"'][^\"']*nav-sidebar[^\"']*[\"'][\s\S]*?</nav>", "", html, flags=re.I)
+    html = re.sub(r"<nav\b[\s\S]*?</nav>", "", html, count=1, flags=re.I)
     html = re.sub(r"margin-left\s*:\s*var\(--nav-width\)\s*;?", "", html, flags=re.I)
     html = re.sub(r"padding-left\s*:\s*var\(--nav-width\)\s*;?", "", html, flags=re.I)
+    colors = _theme_colors(theme or {})
+    css = """
+    <style data-paper-manager-embed>
+      :root {
+        --pm-bg: __PM_BG__;
+        --pm-panel: __PM_PANEL__;
+        --pm-text: __PM_TEXT__;
+        --pm-muted: __PM_MUTED__;
+        --pm-primary: __PM_PRIMARY__;
+        --pm-primary-bg: __PM_PRIMARY_BG__;
+        --pm-border: __PM_BORDER__;
+        --pm-soft: __PM_SOFT__;
+      }
+      html, body { overflow-x: hidden !important; }
+      body {
+        margin: 0 !important;
+        background: var(--pm-bg) !important;
+        color: var(--pm-text) !important;
+        font-family: Avenir Next, Helvetica Neue, -apple-system, BlinkMacSystemFont, "Noto Sans SC", sans-serif !important;
+        font-size: 17px !important;
+        line-height: 1.78 !important;
+      }
+      .layout, .page, .container, .shell { display: block !important; grid-template-columns: none !important; }
+      main, article, .content, .article, .paper, .main {
+        width: min(100%, 1040px) !important;
+        max-width: 1040px !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        color: var(--pm-text) !important;
+      }
+      main { padding-left: clamp(18px, 4vw, 48px) !important; padding-right: clamp(18px, 4vw, 48px) !important; }
+      h1, h2, h3, h4, .title, .brand, summary { color: var(--pm-text) !important; }
+      p, li, td, th, .lead, .caption, .note, .meta, .kicker { color: inherit !important; }
+      .caption, .note, small, .muted { color: var(--pm-muted) !important; }
+      a, .btn, .kicker, .best, .pill { color: var(--pm-primary) !important; }
+      .tile, .card, .callout, .figure, .mathbox, .tablewrap, details, .meta-box, section > aside {
+        background: var(--pm-panel) !important;
+        border-color: var(--pm-border) !important;
+        color: var(--pm-text) !important;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, .06) !important;
+      }
+      .callout { background: var(--pm-primary-bg) !important; border-left-color: var(--pm-primary) !important; }
+      .mathbox, code, pre { background: var(--pm-soft) !important; color: var(--pm-text) !important; }
+      .mathbox { overflow-x: auto !important; }
+      .mathbox .eq {
+        color: var(--pm-text) !important;
+        font-size: 1.04em !important;
+        line-height: 1.65 !important;
+        white-space: normal !important;
+        text-align: center !important;
+      }
+      mjx-container {
+        color: var(--pm-text) !important;
+        max-width: 100% !important;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 2px 0;
+      }
+      mjx-container[jax="SVG"] > svg { max-width: 100% !important; }
+      table { background: var(--pm-panel) !important; color: var(--pm-text) !important; }
+      th { background: var(--pm-soft) !important; color: var(--pm-text) !important; }
+      td, th { border-color: var(--pm-border) !important; }
+      img, svg, canvas, table { max-width: 100% !important; }
+      img, svg, canvas { height: auto !important; }
+      details[open] { max-height: 42vh; overflow: auto; }
+      [data-paper-manager-back] {
+        background: var(--pm-primary-bg) !important;
+        color: var(--pm-primary) !important;
+        border-color: color-mix(in srgb, var(--pm-primary) 24%, var(--pm-border)) !important;
+      }
+      [data-paper-manager-back]:hover {
+        background: var(--pm-panel) !important;
+        transform: translateY(-1px);
+        box-shadow: 0 10px 26px rgba(37, 99, 235, .14) !important;
+      }
+    </style>
+    """
+    mathjax = r"""
+    <script>
+      window.MathJax = {
+        tex: {
+          inlineMath: [['\\\\(', '\\\\)'], ['$', '$']],
+          displayMath: [['\\\\[', '\\\\]'], ['$$', '$$']],
+          processEscapes: true
+        },
+        svg: { fontCache: 'global' },
+        options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] }
+      };
+    </script>
+    <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+    """
+    for key, value in colors.items():
+        css = css.replace(f"__PM_{key.upper()}__", value)
+    assets = css if ("tex-svg.js" in html or "window.MathJax" in html) else css + mathjax
+    html = re.sub(r"</head>", assets + "</head>", html, count=1, flags=re.I) if re.search(r"</head>", html, re.I) else assets + html
     return html
+
+
+def _theme_colors(theme: dict[str, str | None]) -> dict[str, str]:
+    def clean(value: str | None, fallback: str) -> str:
+        if value and re.fullmatch(r"#[0-9a-fA-F]{6}", value):
+            return value
+        return fallback
+
+    primary = clean(theme.get("primary"), "#2563eb")
+    bg = clean(theme.get("bg"), "#fbfcff")
+    panel = clean(theme.get("panel"), "#ffffff")
+    text = clean(theme.get("text"), "#172033")
+    border = clean(theme.get("border"), "#dfe6f1")
+    return {
+        "primary": primary,
+        "bg": bg,
+        "panel": panel,
+        "text": text,
+        "border": border,
+        "muted": "#64748b",
+        "primary_bg": _mix_hex(primary, bg, 0.12),
+        "soft": _mix_hex(border, panel, 0.42),
+    }
+
+
+def _mix_hex(a: str, b: str, amount: float) -> str:
+    def rgb(hex_color: str) -> tuple[int, int, int]:
+        hex_color = hex_color.lstrip("#")
+        return int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
+
+    ar, ag, ab = rgb(a)
+    br, bg, bb = rgb(b)
+    vals = [round(ar * amount + br * (1 - amount)), round(ag * amount + bg * (1 - amount)), round(ab * amount + bb * (1 - amount))]
+    return "#" + "".join(f"{v:02x}" for v in vals)
 
 
 def _clean_html_for_sharing(html: str) -> str:

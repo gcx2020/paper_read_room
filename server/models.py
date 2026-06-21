@@ -109,6 +109,8 @@ class FolderMoveRequest(BaseModel):
 class ResearchRequest(BaseModel):
     paper_name: str = Field(min_length=1)
     pdf_url: str | None = None
+    target_slug: str | None = Field(default=None, pattern=r"^[a-z0-9][a-z0-9\-]*$")
+    replace_paper_id: int | None = None
 
 
 class ResearchLogRequest(BaseModel):
@@ -130,6 +132,8 @@ class ResearchFailRequest(BaseModel):
 class BatchResearchItem(BaseModel):
     paper_name: str = Field(min_length=1)
     pdf_url: str | None = None
+    target_slug: str | None = Field(default=None, pattern=r"^[a-z0-9][a-z0-9\-]*$")
+    replace_paper_id: int | None = None
 
 
 class BatchResearchRequest(BaseModel):

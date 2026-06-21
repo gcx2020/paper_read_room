@@ -121,6 +121,8 @@ def init_db() -> None:
                 id TEXT PRIMARY KEY,
                 paper_name TEXT NOT NULL,
                 pdf_url TEXT,
+                target_slug TEXT,
+                replace_paper_id INTEGER,
                 status TEXT NOT NULL DEFAULT 'queued' CHECK(status IN ('queued','pending','researching','generating','completed','failed','cancelled')),
                 sort_order INTEGER NOT NULL DEFAULT 0,
                 message TEXT NOT NULL DEFAULT '',
@@ -133,10 +135,18 @@ def init_db() -> None:
             )
             """
         )
+        _ensure_column(con, "batch_queue", "target_slug", "TEXT")
+        _ensure_column(con, "batch_queue", "replace_paper_id", "INTEGER")
         con.execute("CREATE TABLE IF NOT EXISTS _migrations (key TEXT PRIMARY KEY, applied_at TEXT NOT NULL)")
         _run_tag_cleanup_migration(con, "clear_auto_tags_v1")
         _run_tag_cleanup_migration(con, "clear_garbage_tags_v2")
         recover_batch_queue(con)
+
+
+def _ensure_column(con: sqlite3.Connection, table: str, column: str, definition: str) -> None:
+    columns = {row["name"] for row in con.execute(f"PRAGMA table_info({table})")}
+    if column not in columns:
+        con.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
 
 
 def _run_tag_cleanup_migration(con: sqlite3.Connection, key: str) -> None:
@@ -393,10 +403,10 @@ def batch_add_tags(ids: list[int], tags: list[str]) -> int:
         return len(ids)
 
 
-def upsert_from_html(path: Path, html: str, preferred_slug: str | None = None, folder_id: int | None = None, extra_tags: list[str] | None = None) -> dict[str, Any]:
+def upsert_from_html(path: Path, html: str, preferred_slug: str | None = None, folder_id: int | None = None, extra_tags: list[str] | None = None, replace_slug: str | None = None) -> dict[str, Any]:
     parsed = parse_html_metadata(html)
     title = parsed.get("title") or preferred_slug or path.stem
-    slug = unique_slug(preferred_slug or slug_from_title(title, parsed.get("year")))
+    slug = replace_slug or unique_slug(preferred_slug or slug_from_title(title, parsed.get("year")))
     final_path = PAPERS_DIR / f"{slug}.html"
     final_path.write_text(html, encoding="utf-8")
     with connect() as con:
@@ -428,6 +438,10 @@ def upsert_from_html(path: Path, html: str, preferred_slug: str | None = None, f
             "html_enriched": 1,
         }
         if existing:
+            if extra_tags is None:
+                payload.pop("tags", None)
+            if folder_id is None:
+                payload.pop("folder_id", None)
             paper = update_paper(existing["id"], payload, con)
             action = "updated"
         else:
