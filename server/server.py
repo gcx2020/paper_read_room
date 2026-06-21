@@ -223,6 +223,8 @@ def api_scan_orphan_html():
 @app.post("/api/sync")
 def api_sync():
     imported = []
+    duplicate_cleanup = db.cleanup_duplicate_papers()
+    orphan_cleanup = db.cleanup_orphan_duplicates()
     with db.connect() as con:
         known = {r["slug"] for r in con.execute("SELECT slug FROM papers")}
     for path in PAPERS_DIR.glob("*.html"):
@@ -232,7 +234,7 @@ def api_sync():
             paper = db.get_paper_by_slug(path.stem)
             if paper:
                 db.update_paper(paper["id"], {"summary_html_exists": 1})
-    return {"ok": True, "imported": imported}
+    return {"ok": True, "imported": imported, "cleanup": {"duplicates": duplicate_cleanup, "orphans": orphan_cleanup}}
 
 
 @app.get("/api/tags")
@@ -480,21 +482,31 @@ def _embed_html(html: str, theme: dict[str, str | None] | None = None) -> str:
       p, li, td, th, .lead, .caption, .note, .meta, .kicker { color: inherit !important; }
       .caption, .note, small, .muted { color: var(--pm-muted) !important; }
       a, .btn, .kicker, .best, .pill { color: var(--pm-primary) !important; }
-      .tile, .card, .callout, .figure, .mathbox, .tablewrap, details, .meta-box, section > aside {
+      .tile, .card, .callout, .figure, .mathbox, .formula, .tablewrap, details, .meta-box, section > aside {
         background: var(--pm-panel) !important;
         border-color: var(--pm-border) !important;
         color: var(--pm-text) !important;
         box-shadow: 0 10px 28px rgba(15, 23, 42, .06) !important;
       }
       .callout { background: var(--pm-primary-bg) !important; border-left-color: var(--pm-primary) !important; }
-      .mathbox, code, pre { background: var(--pm-soft) !important; color: var(--pm-text) !important; }
-      .mathbox { overflow-x: auto !important; }
-      .mathbox .eq {
+      .mathbox, .formula, code, pre, .inline-math {
+        background: var(--pm-soft) !important;
+        color: var(--pm-text) !important;
+      }
+      .mathbox, .formula { overflow-x: auto !important; }
+      .mathbox .eq, .formula .math {
         color: var(--pm-text) !important;
         font-size: 1.04em !important;
         line-height: 1.65 !important;
         white-space: normal !important;
         text-align: center !important;
+      }
+      .formula .latex {
+        color: var(--pm-muted) !important;
+        font-size: .82em !important;
+      }
+      .formula .eqtag {
+        color: var(--pm-muted) !important;
       }
       mjx-container {
         color: var(--pm-text) !important;

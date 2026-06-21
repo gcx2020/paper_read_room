@@ -259,6 +259,35 @@ def get_paper_by_slug(slug: str, con: sqlite3.Connection | None = None) -> dict[
     return row_to_paper(con.execute("SELECT * FROM papers WHERE slug=?", (slug,)).fetchone())
 
 
+def find_existing_paper(parsed: dict[str, Any], con: sqlite3.Connection | None = None) -> dict[str, Any] | None:
+    own = con is None
+    cm = connect() if own else None
+    if own:
+        con = cm.__enter__()
+    assert con is not None
+    try:
+        arxiv_id = parsed.get("arxiv_id")
+        if arxiv_id:
+            row = con.execute("SELECT * FROM papers WHERE arxiv_id=? ORDER BY id ASC LIMIT 1", (arxiv_id,)).fetchone()
+            if row:
+                return row_to_paper(row)
+        title_key = normalize_title(parsed.get("title") or "")
+        if title_key:
+            rows = con.execute("SELECT * FROM papers ORDER BY id ASC").fetchall()
+            for row in rows:
+                paper = row_to_paper(row)
+                if not paper:
+                    continue
+                same_title = normalize_title(paper.get("title") or "") == title_key
+                same_year = not parsed.get("year") or not paper.get("year") or parsed.get("year") == paper.get("year")
+                if same_title and same_year:
+                    return paper
+    finally:
+        if own and cm:
+            cm.__exit__(None, None, None)
+    return None
+
+
 def list_papers(filters: dict[str, Any]) -> tuple[list[dict[str, Any]], int]:
     where: list[str] = []
     args: list[Any] = []
@@ -406,10 +435,13 @@ def batch_add_tags(ids: list[int], tags: list[str]) -> int:
 def upsert_from_html(path: Path, html: str, preferred_slug: str | None = None, folder_id: int | None = None, extra_tags: list[str] | None = None, replace_slug: str | None = None) -> dict[str, Any]:
     parsed = parse_html_metadata(html)
     title = parsed.get("title") or preferred_slug or path.stem
-    slug = replace_slug or unique_slug(preferred_slug or slug_from_title(title, parsed.get("year")))
-    final_path = PAPERS_DIR / f"{slug}.html"
-    final_path.write_text(html, encoding="utf-8")
     with connect() as con:
+        matched = None if replace_slug else find_existing_paper(parsed | {"title": title}, con)
+        slug = replace_slug or (matched["slug"] if matched else unique_slug(preferred_slug or slug_from_title(title, parsed.get("year"))))
+        final_path = PAPERS_DIR / f"{slug}.html"
+        final_path.write_text(html, encoding="utf-8")
+        if path.resolve() != final_path.resolve() and path.exists():
+            path.unlink()
         existing = con.execute("SELECT * FROM papers WHERE slug=?", (slug,)).fetchone()
         # 精读报告只补全论文信息；标签必须由用户手动设置。
         # 批量 AI 研究可通过 extra_tags 统一加一个固定标签。
@@ -465,6 +497,57 @@ def upsert_from_html(path: Path, html: str, preferred_slug: str | None = None, f
         return {"ok": True, "paper_id": paper["id"], "slug": slug, "title": paper["title"], "action": action, "parsed": parsed}
 
 
+def cleanup_orphan_duplicates() -> dict[str, Any]:
+    removed: list[str] = []
+    with connect() as con:
+        known = {r["slug"] for r in con.execute("SELECT slug FROM papers")}
+    for path in PAPERS_DIR.glob("*.html"):
+        if path.stem in known:
+            continue
+        html = path.read_text(encoding="utf-8", errors="replace")
+        parsed = parse_html_metadata(html)
+        if find_existing_paper(parsed):
+            path.unlink(missing_ok=True)
+            removed.append(path.name)
+    return {"ok": True, "removed": removed}
+
+
+def cleanup_duplicate_papers() -> dict[str, Any]:
+    removed: list[dict[str, Any]] = []
+    with connect() as con:
+        rows = [row_to_paper(r) for r in con.execute("SELECT * FROM papers ORDER BY id ASC")]
+        seen: dict[str, dict[str, Any]] = {}
+        duplicate_ids: list[int] = []
+        duplicate_slugs: list[str] = []
+        for paper in rows:
+            if not paper:
+                continue
+            key = paper_identity_key(paper)
+            if not key:
+                continue
+            existing = seen.get(key)
+            if existing:
+                duplicate_ids.append(paper["id"])
+                duplicate_slugs.append(paper["slug"])
+                removed.append({"id": paper["id"], "slug": paper["slug"], "kept_slug": existing["slug"], "title": paper["title"]})
+            else:
+                seen[key] = paper
+        for paper_id in duplicate_ids:
+            con.execute("DELETE FROM papers WHERE id=?", (paper_id,))
+    for slug in duplicate_slugs:
+        (PAPERS_DIR / f"{slug}.html").unlink(missing_ok=True)
+    return {"ok": True, "removed": removed}
+
+
+def paper_identity_key(paper: dict[str, Any]) -> str:
+    if paper.get("arxiv_id"):
+        return f"arxiv:{paper['arxiv_id']}"
+    title_key = normalize_title(paper.get("title") or "")
+    if not title_key:
+        return ""
+    return f"title:{paper.get('year') or ''}:{title_key}"
+
+
 def unique_slug(slug: str) -> str:
     slug = slug or "paper"
     with connect() as con:
@@ -484,6 +567,12 @@ def slug_from_title(title: str, year: int | None = None) -> str:
     text = re.sub(r"-+", "-", text)[:60].rstrip("-")
     text = text or "paper"
     return f"{year}-{text}" if year else text
+
+
+def normalize_title(title: str) -> str:
+    text = re.sub(r"\s*[-–—|]\s*(论文精读|精读|paper\s*reading|summary)\s*$", "", title or "", flags=re.I)
+    text = re.sub(r"[^a-z0-9\u4e00-\u9fff]+", "", text.lower())
+    return text
 
 
 def parse_html_metadata(html: str) -> dict[str, Any]:

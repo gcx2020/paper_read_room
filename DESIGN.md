@@ -2,7 +2,7 @@
 
 ## 1. 项目概述
 
-**Paper Reading Manager** 是一个个人论文精读管理工具，提供 Web 界面浏览、批量管理论文元信息，并集成了 AI 自动研究论文功能（通过 opencode CLI 调用 GLM 5.1）。系统生成的每篇精读 HTML 均为完全自包含单文件，支持离线浏览、MathJax 公式渲染和 base64 内嵌图表。
+**Paper Reading Manager** 是一个个人论文精读管理工具，提供 Web 界面浏览、批量管理论文元信息，并集成 AI 自动研究论文功能（macOS 默认通过 Codex CLI + GPT-5.5 调用）。系统生成的每篇精读 HTML 均为完全自包含单文件，支持离线浏览、全局阅读主题、MathJax 公式渲染和 base64 内嵌图表。
 
 **核心价值**：输入论文名/PDF 链接 → AI 自动搜索、阅读、生成精读 HTML → 自动导入管理 → 离线浏览与分享。
 
@@ -15,7 +15,7 @@
 | 后端     | FastAPI + Uvicorn      | Python 3.10+，异步 Web 框架                   |
 | 数据库   | SQLite (WAL mode)      | 单文件数据库，位于 `data/papers.db`         |
 | 前端     | 纯 HTML/CSS/JS SPA     | 无框架，单页应用                              |
-| AI 引擎  | opencode CLI + GLM 5.1 | subprocess 调用，按 AGENT.md 规范生成         |
+| AI 引擎  | Codex CLI + GPT-5.5    | subprocess 调用，按 AGENT.md 规范生成         |
 | PDF 解析 | PyMuPDF (fitz)         | 图表裁剪（worker 端未直接使用，由 AI 侧完成） |
 | 精读页面 | MathJax + 自包含 HTML  | 内联 CSS/JS，base64 图片                      |
 
@@ -38,8 +38,8 @@ paper/
 │   ├── server.py         # FastAPI 路由定义 (~1167行)
 │   ├── db.py             # SQLite 数据库操作 (~608行)
 │   ├── models.py         # Pydantic 数据模型 (~211行)
-│   ├── research.py       # 研究任务管理 (内存 + SQLite 双存储) (~570行)
-│   └── worker.py         # 后台工作线程 (opencode 子进程) (~446行)
+│   ├── research.py       # 研究任务管理 (单篇内存任务 + SQLite 批量队列)
+│   └── worker.py         # 后台工作线程 (Codex 子进程)
 │
 ├── frontend/             # 前端 SPA
 │   ├── index.html        # 主页面结构
@@ -143,6 +143,8 @@ CREATE TABLE batch_queue (
     id               TEXT PRIMARY KEY,            -- UUID 前8位
     paper_name       TEXT NOT NULL,
     pdf_url          TEXT,
+    target_slug      TEXT,                         -- 重研替换目标 slug
+    replace_paper_id INTEGER,                      -- 重研替换目标 paper id
     status           TEXT NOT NULL DEFAULT 'queued'
                      CHECK(status IN ('queued','pending','researching','generating',
                                       'completed','failed','cancelled')),
@@ -170,6 +172,7 @@ CREATE TABLE _migrations (
 
 - `clear_auto_tags_v1`: 清空所有自动标签
 - `clear_garbage_tags_v2`: 清除垃圾标签（MathJax 残留、特殊字符等）
+- `batch_queue.target_slug / replace_paper_id`: 支持批量重研时覆盖原 HTML
 
 ---
 
@@ -232,7 +235,7 @@ CREATE TABLE _migrations (
 
 | 方法 | 路径          | 说明                                                 |
 | ---- | ------------- | ---------------------------------------------------- |
-| POST | `/api/sync` | 同步 papers/ 目录（扫描 .html 文件，自动导入缺失的） |
+| POST | `/api/sync` | 同步 papers/ 目录；同步前清理重复数据库记录和孤立重复 HTML |
 
 ### 5.6 元数据
 
@@ -246,6 +249,7 @@ CREATE TABLE _migrations (
 | 方法 | 路径                                 | 说明              |
 | ---- | ------------------------------------ | ----------------- |
 | POST | `/api/research/start`              | 创建研究任务      |
+| POST | `/api/papers/{id}/research/replace` | 单篇重研并替换（兼容接口） |
 | GET  | `/api/research/{task_id}`          | 查询研究进度      |
 | POST | `/api/research/{task_id}/complete` | 研究完成提交 HTML |
 | POST | `/api/research/{task_id}/log`      | 上报进度日志      |
@@ -260,6 +264,7 @@ CREATE TABLE _migrations (
 | 方法 | 路径                                                       | 说明                |
 | ---- | ---------------------------------------------------------- | ------------------- |
 | POST | `/api/research/batch/start`                              | 创建批量研究队列    |
+| POST | `/api/papers/{id}/research/batch-replace`                | 将已有论文加入批量重研队列，完成后替换原 HTML |
 | GET  | `/api/research/batch/{batch_id}`                         | 查询批量研究状态    |
 | GET  | `/api/research/batch/active`                             | 活跃批量任务        |
 | GET  | `/api/research/batch/latest`                             | 最新批量状态        |
@@ -270,7 +275,7 @@ CREATE TABLE _migrations (
 | POST | `/api/research/batch/{batch_id}/items/{task_id}/stop`    | 停止单个任务        |
 | POST | `/api/research/batch/{batch_id}/items/{task_id}/retry`   | 重试失败/取消的任务 |
 
-**批量研究存储**：SQLite `batch_queue` 表，全局单队列 `QUEUE_ID = "default"`。
+**批量研究存储**：SQLite `batch_queue` 表，全局单队列 `QUEUE_ID = "default"`。已有论文的“重研”也进入该队列，通过 `target_slug` 指向原报告，完成后覆盖 `papers/<slug>.html`，不会产生第二份报告。
 
 ### 5.9 精读页面访问
 
@@ -332,6 +337,8 @@ summary_html_exists: int, html_enriched: int
 ```
 paper_name: str (min_length=1)
 pdf_url: str | None
+target_slug: str | None
+replace_paper_id: int | None
 ```
 
 ### ResearchLogRequest
@@ -354,7 +361,7 @@ parent_id: int | None
 
 ```
 papers: list[BatchResearchItem] (1-50)
-  BatchResearchItem: { paper_name: str, pdf_url: str | None }
+  BatchResearchItem: { paper_name: str, pdf_url: str | None, target_slug: str | None, replace_paper_id: int | None }
 ```
 
 ---
@@ -393,6 +400,16 @@ papers: list[BatchResearchItem] (1-50)
 4. AI 研究完成后强制解析
 5. 文件同步后强制解析
 
+### 7.1 单报告去重策略
+
+系统强约束：同一篇论文只保留一份数据库记录和一份 `papers/<slug>.html`。
+
+- 优先用 `arxiv_id` 识别同一篇论文。
+- 没有 arXiv ID 时，用归一化后的 `title + year` 识别。
+- `upsert_from_html()` 如果识别到已有论文，会复用已有 slug 并覆盖同名 HTML，而不是创建 `-2/-3`。
+- Codex 生成的临时 HTML 文件名如果和最终 slug 不同，会在导入后删除。
+- `/api/sync` 会先执行数据库重复记录清理和孤立 HTML 清理，再导入缺失文件。
+
 ---
 
 ## 8. AI 研究工作流
@@ -408,10 +425,10 @@ worker 线程轮询 (3秒间隔)
         ↓
 取出 pending 任务
         ↓
-subprocess 调用 opencode CLI:
-  opencode run "<prompt>" -f AGENT_MD_PATH -m huawei/glm5.1 --dangerously-skip-permissions
+subprocess 调用 Codex CLI:
+  codex exec -m gpt-5.5 -C <project-root> --skip-git-repo-check -s workspace-write --color never "<prompt>"
         ↓
-等待 opencode 完成 (超时 7200秒)
+等待 Codex 完成 (超时 7200秒)
         ↓
 检测 papers/ 目录新增 HTML 文件
         ↓
@@ -422,20 +439,18 @@ complete_research_task → 写入 papers/<slug>.html
 自动创建/更新 papers 数据库记录 + HTML enrich
 ```
 
-**opencode 命令**：
+**Codex 命令**：
 
 ```bash
-opencode run "请精读这篇论文（PDF 链接）：{pdf_url or paper_name}
+codex exec -m "${PAPER_CODEX_MODEL:-gpt-5.5}" -C . --skip-git-repo-check -s workspace-write --color never \
+"请精读这篇论文（PDF 链接或论文名）：{pdf_url or paper_name}
 
 请严格按照附带的 AGENT.md 规范生成精读HTML页面。
 要求：
 1. 只生成一个 .html 文件，保存到 papers/ 目录下
 2. 不要在 papers/ 目录下生成任何非 HTML 文件
 3. HTML 文件必须完全自包含（内联 CSS/JS），可离线打开
-4. 图表使用 base64 内嵌" \
-  -f AGENT_MD_PATH \
-  -m huawei/glm5.1 \
-  --dangerously-skip-permissions
+4. 图表使用 base64 内嵌"
 ```
 
 ### 8.2 批量研究
@@ -449,11 +464,11 @@ batch worker 线程轮询 (5秒间隔)
         ↓
 取出下一个 queued 任务 → 设为 pending
         ↓
-同单篇流程调用 opencode
+同单篇流程调用 Codex
         ↓
 完成后 → batch_queue_complete_task
         ↓
-自动创建 papers 记录 + 打 "🔍AI研究" 标签 + 移入 "AI研究论文" 文件夹
+自动创建/更新 papers 记录 + 打 "AI研究" 标签 + 移入 "AI研究论文" 文件夹
         ↓
 处理下一个 queued 任务
 ```
@@ -465,6 +480,7 @@ batch worker 线程轮询 (5秒间隔)
 - 支持单个任务停止/重试/移除/排序
 - 服务重启后自动恢复中断的任务（`pending/researching/generating` → `queued`）
 - 完成的论文自动放入 "AI研究论文" 文件夹（紫色 #8b5cf6）
+- 已完成任务显示“打开 / 重研 / 移除”；“重研”会重新排队并替换原 HTML，只保留一份研究报告
 
 ---
 
@@ -507,7 +523,7 @@ batch worker 线程轮询 (5秒间隔)
 │ └─────────┘ │  │                                      │  │
 │ ┌─────────┐ │  │  ┌─ .pagination ──────────────────┐  │  │
 │ │ 标签     │ │  │  │ « 1 2 3 » 共 N 篇              │  │  │
-│ │ 🔍AI研究 │ │  │  └────────────────────────────────┘  │  │
+│ │ AI研究   │ │  │  └────────────────────────────────┘  │  │
 │ │ VLA      │ │  │                                      │  │
 │ │ ...      │ │  └──────────────────────────────────────┘  │
 │ └─────────┘ │                                            │
@@ -631,7 +647,7 @@ batch worker 线程轮询 (5秒间隔)
 
 [PDF] [arXiv] [GitHub] [Project] [OpenReview]
 
-标签: [在读] [VLA] [🔍AI研究]
+标签: [在读] [VLA] [AI研究]
 
 精读预览:
 ┌───────────────────────────────────────────────────────┐
@@ -711,7 +727,7 @@ batch worker 线程轮询 (5秒间隔)
 ```
 ┌─ 🔮 AI 研究论文 ──────────────── × ─┐
 │                                     │
-│ ℹ 输入论文名，创建研究任务。opencode  │
+│ ℹ 输入论文名，创建研究任务。Codex    │
 │ 将按照 AGENT.md 规范生成精读 HTML。 │
 │ 一次只能运行一个研究任务。           │
 │                                     │
@@ -722,7 +738,7 @@ batch worker 线程轮询 (5秒间隔)
 │ │ 🔄 正在研究...     任务ID: xxx  │ │
 │ │ ┌─────────────────────────────┐ │ │
 │ │ │ 12:30:01 🔍 开始研究...     │ │ │
-│ │ │ 12:30:05 🔍 调用 opencode...│ │ │
+│ │ │ 12:30:05 ◇ 调用 Codex...   │ │ │
 │ │ │ 12:35:22 ✅ HTML 已生成     │ │ │
 │ │ │ 12:35:23 ✅ 研究完成        │ │ │
 │ │ └─────────────────────────────┘ │ │
@@ -750,10 +766,9 @@ batch worker 线程轮询 (5秒间隔)
 ```
 ┌─ 🔮 批量 AI 研究 ─────────────── × ─┐
 │                                     │
-│ ℹ 添加多篇论文到研究队列，系统将    │
-│ 按顺序逐一调用 opencode 生成精读。 │
-│ 完成的论文自动打 "🔍AI研究" 标签   │
-│ 并放入 "AI研究论文" 文件夹。       │
+│ ℹ 队列按顺序调用 Codex + GPT-5.5。 │
+│ 新研究会自动归档；已有论文点重研   │
+│ 会排队执行并覆盖原 HTML。          │
 │                                     │
 │ [论文名称输入]  [PDF URL]  [➕添加] │
 │                                     │
@@ -780,12 +795,28 @@ batch worker 线程轮询 (5秒间隔)
 
 - 排队中(⏳): 上移/下移/移除按钮
 - 进行中(🔄): 停止按钮
-- 完成(✅): 打开精读页链接 + 移除按钮
+- 完成(✅): 打开精读页链接 + 重研按钮 + 移除按钮
 - 失败(❌): 重试 + 移除按钮
 
-**批量研究中徽章**：工具栏显示旋转 spinner + "批量研究中" 按钮。
+**批量研究中徽章**：工具栏显示“批量研究中 current/total”按钮，点击可打开队列面板查看历史队列和实时进度。
 
-### 9.10 拖拽上传
+### 9.10 阅读主题
+
+管理页和精读页共享一套主题预设，通过 CSS 变量和 `/read/{slug}` 查询参数传递：
+
+- 云白蓝（默认管理页风格）
+- 清墨绿（低饱和阅读）
+- GitHub Light（浅色代码/论文阅读）
+- GitHub Dark（深色护眼阅读）
+- 深夜蓝（暗色长读）
+
+左侧底部和右上角均提供“阅读主题”入口。精读 iframe 会带上 `primary/bg/panel/text/border` 参数，服务端渲染时覆盖不同版本生成 HTML 的原始风格，让旧报告和新报告统一受管理页主题控制。
+
+### 9.11 左侧筛选交互
+
+状态、文件夹、标签、搜索、年份、排序和分页都会先切回列表视图再应用筛选，避免用户在详情页点击左侧筛选时看起来“没有跳转”。文件夹支持树形嵌套；文件夹颜色来自预设色板。
+
+### 9.12 拖拽上传
 
 整个页面支持 HTML 文件拖拽导入：
 
@@ -793,7 +824,7 @@ batch worker 线程轮询 (5秒间隔)
 - `drop`: 自动调用 uploadFiles API
 - 支持多文件同时上传
 
-### 9.11 Toast 通知
+### 9.13 Toast 通知
 
 右下角弹出通知，3.5秒自动消失，三种样式：
 
@@ -855,13 +886,12 @@ POST /api/upload-summary (FormData)
         ↓
 读取 HTML 内容 → _parse_html_metadata()
         ↓
-生成 slug = <year>-<normalized-title>
+解析 arXiv ID / title / year → 识别是否已有同一篇论文
         ↓
-检查 slug 是否已存在:
-  已存在 → 更新 HTML + enrich
-  不存在 → 写入 papers/<slug>.html
-           + 创建 papers 记录 (status=reading)
-           + enrich
+已有同一篇 → 复用原 slug，覆盖 papers/<slug>.html，清理临时副本
+不存在 → 生成 slug = <year>-<normalized-title>
+         写入 papers/<slug>.html
+         创建 papers 记录 (status=reading) + enrich
         ↓
 返回 { ok, paper_id, slug, title, action, parsed }
 ```
@@ -877,8 +907,11 @@ if embed=1:
   移除 <nav class="nav-sidebar"> 及其 CSS
   移除 margin-left: var(--nav-width)
         ↓
-注入 "返回主界面" 按钮:
-  固定定位，左上角，紫色渐变，z-index: 99999
+按 query 参数注入全局主题变量:
+  primary/bg/panel/text/border
+        ↓
+注入轻量 "返回主界面" 按钮:
+  固定定位，左上角，使用当前主题色
   <a href="/">← 返回主界面</a>
         ↓
 返回 HTMLResponse
@@ -911,6 +944,24 @@ def _slug_from_title(title, year=None):
 ```
 
 示例：`"ChainFlow-VLA: ..."` + year=2026 → `"2026-chainflow-vla"`
+
+### 11.5 同步与去重
+
+```
+POST /api/sync
+        ↓
+cleanup_duplicate_papers()
+  按 arXiv ID / title+year 删除重复数据库记录及其 HTML
+        ↓
+cleanup_orphan_duplicates()
+  删除 papers/ 中未被数据库引用、但可识别为已有论文的孤立副本
+        ↓
+扫描 papers/*.html
+  已有 slug → 标记 summary_html_exists=1
+  缺失 slug → upsert_from_html()，仍按单报告策略导入/覆盖
+```
+
+最终目标：`papers/*.html` 数量等于数据库 `papers` 记录数，且无重复 arXiv ID / 标题。
 
 ---
 
@@ -967,11 +1018,10 @@ def _slug_from_title(title, year=None):
 
 | 变量             | 默认值                                   | 说明         |
 | ---------------- | ---------------------------------------- | ------------ |
-| `PAPER_HOST`   | `0.0.0.0`                              | 监听地址     |
-| `PAPER_PORT`   | `8000` (开发) / `8080` (打包)        | 监听端口     |
-| `GLM_API_KEY`  | —                                       | GLM API 密钥 |
-| `GLM_API_BASE` | `https://open.bigmodel.cn/api/paas/v4` | API 基础 URL |
-| `GLM_MODEL`    | `glm5.1`                               | 使用的模型   |
+| `PAPER_HOST`        | `0.0.0.0`                       | 监听地址 |
+| `PAPER_PORT`        | `8000` (开发) / `8080` (打包) | 监听端口 |
+| `PAPER_CODEX_MODEL` | `gpt-5.5`                       | AI 研究调用的 Codex 模型 |
+| `CODEX_MODEL`       | —                                | `PAPER_CODEX_MODEL` 未设置时的回退模型 |
 
 ---
 
@@ -1016,8 +1066,8 @@ def _slug_from_title(title, year=None):
 pip install fastapi>=0.100.0 uvicorn>=0.23.0 python-multipart>=0.0.6 \
             aiofiles>=23.0 pydantic>=2.0 pymupdf>=1.24.0 httpx>=0.25.0
 
-# 可选: 安装 opencode CLI (AI 研究功能依赖)
-# 须配置 GLM_API_KEY 环境变量
+# 可选: 安装并登录 Codex CLI (AI 研究功能依赖)
+# 默认模型为 gpt-5.5，可通过 PAPER_CODEX_MODEL 覆盖
 ```
 
 ### 15.2 目录结构创建
@@ -1073,8 +1123,11 @@ python run.py
 - [ ] 文件夹 CRUD (树形+颜色)
 - [ ] 文件夹移动论文
 - [ ] 同步文件系统
+- [ ] 同步后 papers/*.html 与数据库记录一一对应，无孤立副本
 - [ ] 自动归档精读 HTML
 - [ ] AI 研究 (单篇 + 批量)
+- [ ] 已有论文重研进入批量队列，并替换原 HTML
+- [ ] 阅读主题预设可统一管理页和精读页
 - [ ] 研究进度实时展示
 - [ ] 研究中徽章
 - [ ] 页面刷新后恢复研究状态

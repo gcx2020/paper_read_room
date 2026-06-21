@@ -105,10 +105,11 @@ def _run_codex_research(paper_name: str, pdf_url: str | None, log, target_slug: 
     html = html_path.read_text(encoding="utf-8", errors="replace")
     html = _polish_generated_html(html, log)
     result = db.upsert_from_html(html_path, html, replace_slug=target_slug)
-    if target_slug and html_path.name != f"{target_slug}.html" and html_path.exists():
+    final_path = PAPERS_DIR / f"{result['slug']}.html"
+    if html_path.resolve() != final_path.resolve() and html_path.exists():
         try:
             html_path.unlink()
-            log(f"已用新研究结果替换原版本：{target_slug}.html", "generating")
+            log(f"已清理生成过程中的临时副本：{html_path.name}", "generating")
         except OSError as exc:
             log(f"替换完成，但清理临时版本失败：{exc}", "warning")
     return result

@@ -109,6 +109,7 @@ async function loadFilters() {
 }
 
 async function loadPapers() {
+  showListView();
   const q = new URLSearchParams();
   Object.entries(state.filters).forEach(([k, v]) => {
     if (v !== "" && v !== null && v !== undefined) q.set(k, v);
@@ -137,6 +138,7 @@ function renderTags() {
     btn.onclick = () => {
       state.filters.tag = state.filters.tag === tag.name ? "" : tag.name;
       state.filters.offset = 0;
+      showListView();
       loadPapers();
       renderTags();
     };
@@ -173,6 +175,7 @@ function renderFolderRows(folders, root, depth) {
     $(".nav-item", wrap).onclick = () => {
       state.filters.folder_id = state.filters.folder_id === folder.id ? null : folder.id;
       state.filters.offset = 0;
+      showListView();
       loadPapers();
       renderFolders();
     };
@@ -254,6 +257,7 @@ function renderPagination(total) {
     btn.disabled = disabled;
     btn.onclick = () => {
       state.filters.offset = (target - 1) * state.filters.limit;
+      showListView();
       loadPapers();
     };
     root.append(btn);
@@ -300,8 +304,7 @@ async function showDetail(id) {
     <div class="chips"><span class="chip status-${paper.status}">${statusLabel(paper.status)}</span>${(paper.tags || []).map(t => `<span class="chip">${escapeHtml(t)}</span>`).join("")}</div>
     ${paper.summary_html_exists ? `<iframe class="summary-frame" src="${readUrl(paper.slug, true)}"></iframe>` : `<div class="empty-state"><h2>暂无精读 HTML</h2><p>可以上传 HTML 或启动 AI 研究生成。</p></div>`}`;
   $("#backListBtn").onclick = () => {
-    detail.classList.add("hidden");
-    $("#listView").classList.remove("hidden");
+    showListView();
   };
   $("#detailEditBtn").onclick = () => openPaperModal(paper);
   $("#detailReresearchBtn").onclick = () => startReplaceResearch(paper);
@@ -631,16 +634,19 @@ function bindEvents() {
   $("#searchInput").oninput = debounce(e => {
     state.filters.search = e.target.value.trim();
     state.filters.offset = 0;
+    showListView();
     loadPapers();
   });
   $("#yearFilter").onchange = e => {
     state.filters.year = e.target.value;
     state.filters.offset = 0;
+    showListView();
     loadPapers();
   };
   $("#sortSelect").onchange = e => {
     const [sort, order] = e.target.value.split(":");
     Object.assign(state.filters, { sort, order, offset: 0 });
+    showListView();
     loadPapers();
   };
   $$("[data-filter-status]").forEach(btn => btn.onclick = () => {
@@ -648,11 +654,13 @@ function bindEvents() {
     state.filters.offset = 0;
     $$(".nav-item,.stat-card").forEach(x => x.classList.remove("active"));
     $$(`[data-filter-status="${state.filters.status}"]`).forEach(x => x.classList.add("active"));
+    showListView();
     loadPapers();
   });
   $('[data-folder-id="0"]').onclick = () => {
     state.filters.folder_id = state.filters.folder_id === 0 ? null : 0;
     state.filters.offset = 0;
+    showListView();
     renderFolders();
     loadPapers();
   };
@@ -718,6 +726,12 @@ function bindSidebarResize() {
 }
 function setSidebarWidth(width) {
   document.documentElement.style.setProperty("--sidebar-w", `${Math.round(width)}px`);
+}
+
+function showListView() {
+  $("#detailView")?.classList.add("hidden");
+  $("#listView")?.classList.remove("hidden");
+  state.currentPaper = null;
 }
 
 function initTheme() {
